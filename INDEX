@@ -1,0 +1,13 @@
+# ARIA Sensing srl (2024).
+toolbox >> ARIA_UWB_Toolbox
+Category DataAccess 1
+ var_immediate_inquiry var_immediate_command var_immediate_update
+Category Antenna 2
+ antenna_create antenna_is_valid antenna_radiated_power antenna_directivity
+ antenna_group_delay antenna_rebuild_for_time_domain antenna_rebuild_for_time_domain_single_angle
+ antenna_calc_signal_rx
+Category UWB_Waveforms 3
+ signal_uwb_pulse signal_clock_phase_noise pm_demod signal_build_correlation_kernel
+ 
+ 
+ 
