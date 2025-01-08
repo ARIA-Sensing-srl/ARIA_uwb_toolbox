@@ -80,5 +80,9 @@ run: all
 	  --eval 'if (! isempty ("$(DEPENDS)")); pkg load $(DEPENDS); endif;' \
 	  --eval 'addpath (fullfile (pwd, "inst"));' \
 	  --eval 'addpath (fullfile (pwd, "src"));'
+	  
+clean: all 
+	cd src && $(MAKE) $@
+
 
 maintainer-clean: clean

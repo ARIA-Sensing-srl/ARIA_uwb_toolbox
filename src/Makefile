@@ -82,7 +82,7 @@ antenna_rebuild_for_time_domain_single_angle.oct: antenna_rebuild_for_time_domai
 antenna_calc_signal_tx.oct: antenna_calc_signal_tx.cpp uwb_toolbox_utils.cpp
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 	
-antenna_calc_signal_rx.oct: antenna_calc_signal_rx.cpp uwb_toolbox_utils.cpp
+antenna_calc_signal_rx.oct: antenna_calc_signal_rx.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp 
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 
 signal_uwb_pulse.oct: signal_uwb_pulse.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp uwb_lt102_lt103_data.cpp

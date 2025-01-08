@@ -1,4 +1,4 @@
-Name: ARIA_UWB_Toolbox
+Name: aria_uwb_toolbox
 Version: 0.1.0
 Date: 2025-01-07
 Author: ARIA Sensing srl - info@ariasensing.com
@@ -7,5 +7,5 @@ Title: ARIA UWB Toolbox
 Description: Toolbox to access and elaborate data from 
  ARIA Sensing Radar Modules
 Url: https://github.com/ariasensing/ARIA_uwb_toolbox.git
-Depends: octave (>= 9.3.0), signal, communications
+Depends: octave (>= 9.2.0), signal, communications
 License: LGPLv3+
