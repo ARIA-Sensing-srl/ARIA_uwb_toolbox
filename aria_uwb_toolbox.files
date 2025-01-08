@@ -1,4 +1,3 @@
-.gitignore
 CITATION
 COPYING
 ChangeLog
@@ -6,6 +5,7 @@ DESCRIPTION
 INDEX
 Makefile
 src/Makefile
+src/ant_build_time_domain_angle.cpp
 src/antenna_calc_signal_rx.cpp
 src/antenna_calc_signal_tx.cpp
 src/antenna_create.cpp
