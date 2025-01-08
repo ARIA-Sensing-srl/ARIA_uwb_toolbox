@@ -73,13 +73,13 @@ antenna_directivity.oct: antenna_directivity.cpp uwb_toolbox_utils.cpp
 antenna_group_delay.oct: antenna_group_delay.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 
-antenna_rebuild_for_time_domain.oct: antenna_rebuild_for_time_domain.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
+antenna_rebuild_for_time_domain.oct: antenna_rebuild_for_time_domain.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 
-antenna_rebuild_for_time_domain_single_angle.oct: antenna_rebuild_for_time_domain_single_angle.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
+antenna_rebuild_for_time_domain_single_angle.oct: antenna_rebuild_for_time_domain_single_angle.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 
-antenna_calc_signal_tx.oct: antenna_calc_signal_tx.cpp uwb_toolbox_utils.cpp
+antenna_calc_signal_tx.oct: antenna_calc_signal_tx.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp
 	$(MKOCTFILE) $(PKG_CXXFLAGS) $< -o $@
 	
 antenna_calc_signal_rx.oct: antenna_calc_signal_rx.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp 

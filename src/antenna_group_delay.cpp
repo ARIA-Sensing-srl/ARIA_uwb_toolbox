@@ -30,7 +30,7 @@
 
 
 DEFUN_DLD(antenna_group_delay, args, , "-*- texinfo -*-\n\
-@deftypefn {} {@var{antenna_out} =} antenna_directivity (@var{antenna_input})\n\
+@deftypefn {} {@var{antenna_out} =} antenna_group_delay (@var{antenna_input})\n\
 Calculate group delay of antenna\n\
 along the two components (Phi/Theta) \n\
 @end deftypefn")

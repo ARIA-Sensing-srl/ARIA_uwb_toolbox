@@ -3,8 +3,8 @@ COPYING
 ChangeLog
 DESCRIPTION
 INDEX
-Makefile
-src/Makefile
+__donotuse_Makefile
+src/_donotuse__Makefile
 src/ant_build_time_domain_angle.cpp
 src/antenna_calc_signal_rx.cpp
 src/antenna_calc_signal_tx.cpp
@@ -18,6 +18,7 @@ src/antenna_rebuild_for_time_domain_single_angle.cpp
 src/aria_rdk_interface_message.cpp
 src/aria_rdk_interface_messages.h
 src/aria_uwb_toolbox.h
+src/directivity.cpp
 src/pm_demod.cpp
 src/signal_build_correlation_kernel.cpp
 src/signal_clock_phase_noise.cpp

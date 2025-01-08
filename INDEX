@@ -1,5 +1,5 @@
 # ARIA Sensing srl (2024).
-toolbox >> aria_uwb_toolbox
+aria_uwb_toolbox >> ARIA UWB Toolbox
 Category DataAccess 1
  var_immediate_inquiry var_immediate_command var_immediate_update
 Category Antenna 2

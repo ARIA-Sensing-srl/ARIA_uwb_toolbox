@@ -9,3 +9,4 @@ Description: Toolbox to access and elaborate data from
 Url: https://github.com/ariasensing/ARIA_uwb_toolbox.git
 Depends: octave (>= 9.2.0), signal, communications
 License: LGPLv3+
+Autoload: no
