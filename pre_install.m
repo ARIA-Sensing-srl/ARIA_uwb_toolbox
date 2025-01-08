@@ -47,7 +47,6 @@ function retval = pre_install (install_data)
 
   printf("Making antenna_create...\n");
   mkoctfile antenna_create.cpp uwb_toolbox_utils.cpp
-  %-o install_data.archprefix+"/antenna_create.oct"
   printf("Done \n");
 
   printf("Making antenna_is_valid...\n");
@@ -77,11 +76,11 @@ function retval = pre_install (install_data)
   printf("Done \n");
 
   printf("Making antenna rx...\n");
-  mkoctfile antenna_calc_signal_rx.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp
+  mkoctfile antenna_calc_signal_rx.cpp ant_build_time_domain_angle.cpp directivity.cpp uwb_toolbox_utils.cpp
   printf("Done \n");
 
   printf("Making antenna tx...\n");
-  mkoctfile antenna_calc_signal_tx.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp
+  mkoctfile antenna_calc_signal_tx.cpp ant_build_time_domain_angle.cpp directivity.cpp uwb_toolbox_utils.cpp
   printf("Done \n");
 
   printf("-----------------------------------\n");
