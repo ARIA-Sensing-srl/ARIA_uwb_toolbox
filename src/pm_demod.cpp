@@ -30,7 +30,7 @@
 #include "aria_uwb_toolbox.h"
 
 DEFUN_DLD(pm_demod, args, , "-*- texinfo -*-\n\
-@deftypefn {} @var{aout} = pm_demod (@var{signal},@var{ts},@var{center_freq})\n\
+@deftypefn {} {@var{aout} =} pm_demod (@var{signal},@var{ts},@var{center_freq})\n\
 Phase Demodulator for PN calculations. Output PN pectrum is onesided\n\
 @var{signal} is the signal for which we calculate the PN \n\
 @var{ts} is the sampling interval for @var{signal} \n\
