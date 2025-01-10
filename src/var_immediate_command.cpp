@@ -33,9 +33,9 @@
 #include <octave/parse.h>
 #include "aria_rdk_interface_messages.h"
 #include <string>
-#include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <thread>
 
 DEFUN_DLD(var_immediate_command, args, , "-*- texinfo -*-\n\
 @deftypefn {} {@var{done} =} var_immediate_update (@var{var_name})\n\
@@ -84,14 +84,18 @@ Send a message to stdout so that the @var{var_name} is updated immediately from 
     myfile.close();
     octave_stdout << str_output;
 
-    while (1)
+	int n=0;
+	while (std::filesystem::exists(filename.c_str()))
     {
-        /*
-        if (access( filename.c_str(), F_OK ) == -1)
-            break;
-        */
-        if (!std::filesystem::exists(filename.c_str()))
-            break;
+	  using namespace std::chrono_literals;
+	  std::this_thread::sleep_for(10ms);
+	  n++;
+	  if (n==1000)
+	  {
+		  error("Missing response from device");
+		  out(0)=false;
+		  return octave_value(out);
+	  }
     }
 
     out(0)=true;
