@@ -102,6 +102,10 @@ function retval = pre_install (install_data)
   printf("Making UWB Kernel...\n");
   mkoctfile signal_build_correlation_kernel.cpp uwb_toolbox_utils.cpp
   printf("Done \n");
+  
+  printf("Making data converter...\n");
+  mkoctfile f16tosingle.cpp
+  printf("Done \n");
 
   printf("-----------------------------------\n");
   printf("ARIA Modules Control \n");
