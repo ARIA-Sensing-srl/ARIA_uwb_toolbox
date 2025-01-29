@@ -34,7 +34,7 @@ DEFUN_DLD(pm_demod, args, , "-*- texinfo -*-\n\
 Phase Demodulator for PN calculations. Output PN pectrum is onesided\n\
 @var{signal} is the signal for which we calculate the PN \n\
 @var{ts} is the sampling interval for @var{signal} \n\
-@var(center_freq) is the center frequency.\n\
+@var{center_freq} is the center frequency.\n\
 @end deftypefn")
 {
     if (args.length()!=3)

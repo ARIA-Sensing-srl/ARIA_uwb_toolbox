@@ -39,6 +39,8 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	NDArray     tmax_array = args(1).array_value();
 	double      tmax = tmax_array(0);
 	NDArray     ts_array = args(2).array_value();
+	double		fixed_delay = args(3).array_value()(0);
+	double		loss		= args(4).array_value()(0);
 
 	// If we don't have directivity data, let's calculate
 	if (!(ant.contains("aeff_p"))||(!(ant.contains("aeff_t"))))
@@ -104,8 +106,6 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 		extra_freqs_high = 0;
 	else
 		extra_freqs_high = 2;
-
-
 
 	// Add two points
 	NDArray freq_start;
@@ -186,14 +186,16 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	}
 
 
-	// Fill with prev data and compensate for reference distance
-	double delay = REF_DISTANCE/C0;
+	// Fill with prev data and compensate for reference distance (positive here but sign is compensated
+	// below)
+	double delay = REF_DISTANCE/C0 - fixed_delay;
+	double loss_factor = pow(10.0, loss/20.0);
 
 	for (int fs=0,f = extra_freqs_low; fs < nf_start; fs++, f++)
 	{
 		double curr_freq= freq_ant(fs);
 		freq_start(f)   = curr_freq;
-		std::complex<double> comp_delay = std::exp(std::complex(0.0, M_2PI * curr_freq * delay));
+		std::complex<double> comp_delay = loss_factor*std::exp(std::complex(0.0, M_2PI * curr_freq * delay));
 		ep_start(f)     = ep_ant(fs) * comp_delay;
 		et_start(f)     = et_ant(fs) * comp_delay;
 		aeffp_start(f)  = aeffp_ant(fs) * comp_delay;
@@ -231,6 +233,10 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	ant.assign("td_tmax",   octave_value(tmax_array));
 	ant.assign("td_ts",     octave_value(ts_array));
 	ant.assign("n_ffts",    octave_value(nsamples));
+
+	ant.assign("td_delay",	octave_value(fixed_delay));
+	ant.assign("td_loss",	octave_value(loss));
+
 
 	ant.assign("td_dir_abs",octave_value(diri));
 	return octave_value(ant);

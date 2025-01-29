@@ -49,12 +49,12 @@ void rect_to_polar(double x, double y, double z, double& azimuth, double& zenith
 dt_type_size check_data_size(const octave_value& data)
 {
     dt_type_size out;
-    bool data_real = data.isreal();
-    bool data_cplx = data.iscomplex();
+	bool data_real = data.isreal() == 1;
+	bool data_cplx = data.iscomplex() == 1;
     if ((!data_real) && (!data_cplx))
     {
         out.size = UNDEFINED;
-        out.type = UNKOWN;
+		out.type = UNKNOWN;
         return out;
     }
 
@@ -64,31 +64,32 @@ dt_type_size check_data_size(const octave_value& data)
     if (vdims.num_ones() == ndim-1)
     {
         out.size = VECTOR;
-        out.type = data_real ? REAL : COMPLEX;
+		out.type = data_real ? REAL : data_cplx ? COMPLEX : UNKNOWN;
+		return out;
     }
 
     if (vdims.num_ones() == ndim)
     {
         out.size = NUMBER;
-        out.type = data_real ? REAL : COMPLEX;
+		out.type = data_real ? REAL : data_cplx ? COMPLEX : UNKNOWN;
         return out;
     }
 
     if (ndim==2)
     {
         out.size = MATRIX_2D;
-        out.type = data_real ? REAL : COMPLEX;
+		out.type = data_real ? REAL : data_cplx ? COMPLEX : UNKNOWN;
         return out;
     }
 
     if (ndim==3)
     {
         out.size = MATRIX_3D;
-        out.type = data_real ? REAL : COMPLEX;
+		out.type = data_real ? REAL : data_cplx ? COMPLEX : UNKNOWN;
         return out;
     }
 
     out.size = MATRIX_ND;
-    out.type = data_real ? REAL : COMPLEX;
+	out.type = data_real ? REAL : data_cplx ? COMPLEX : UNKNOWN;
     return out;
 }

@@ -33,7 +33,7 @@ DEFUN_DLD(signal_clock_phase_noise, args, , "-*- texinfo -*-\n\
 @deftypefn {} {@var{aout} =} signal_clock_phase_noise (@var{time},@var{center_freq},@var{freqs},@var{phase_noise_dbc})\n\
 Create a sin signal with given PN spectral mask\n\
 @var{time} is the time support \n\
-@var(center_freq) is the center frequency (it can be an array for freq error)\n\
+@var{center_freq} is the center frequency (it can be an array for freq error)\n\
 @var{freqs} is a vector containing the frequency points at which the PN is specified\n\
 @var{phase_noise_dbc} is the phase noise in dBc\n\
 @end deftypefn")

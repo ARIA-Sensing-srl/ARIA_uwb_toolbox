@@ -47,7 +47,7 @@ DEFUN_DLD(antenna_calc_signal_rx, args, , "-*- texinfo -*-\n\
 @var {donoise},@var{ts} ,@var{rcs}, @var{rcs_freq})\n\
 Calculate the signal received from a target or a signal transmitted from a certain point \n\
 @var{ant} is the antenna, \n\
-@var{pos_ant} is the position of the antenna \n\
+@var{pos_ant} is the position of the antenna. If empty, use antenna declared position\n\
 @var{pos}     is the position where we calculated the radiated field \n\
 @var{signal_ep}  is the electric fielad along p polarization radiated from @var{pos}\n\
 @var{signal_et}  is the electric fielad along t polarization radiated from @var{pos}.\n\
@@ -78,9 +78,9 @@ Calculate the signal received from a target or a signal transmitted from a certa
         return octave_value();
     }
 
-    if (!(args(1).isreal())||(args(1).numel()!=3))
+	if (!(args(1).isreal())||((args(1).numel()!=3)&&(args(1).numel()!=0)))
     {
-        error("pos_ant must be a 3-values real vector");
+		error("pos_ant must be a 3-values or empty real vector");
         return octave_value();
     }
 
@@ -200,7 +200,7 @@ Calculate the signal received from a target or a signal transmitted from a certa
         }
     }
 
-    NDArray pos_ant = args(1).array_value();
+	NDArray pos_ant = args(1).numel() == 3 ? args(1).array_value() : ant.getfield("position")(0).array_value();
     NDArray pos     = args(2).array_value();
 
     // Make same dims
@@ -208,6 +208,9 @@ Calculate the signal received from a target or a signal transmitted from a certa
         pos.reshape(pos_ant.dims());
 
     double  ts      = args(5).array_value()(0);
+	double  delay   = ant.getfield("fixed_delay")(0).array_value()(0);
+	double  loss    = ant.getfield("loss")(0).array_value()(0);
+
 
     // Delay
     NDArray delta   = (pos - pos_ant);
@@ -219,12 +222,18 @@ Calculate the signal received from a target or a signal transmitted from a certa
 
     // Check if we need to update
     bool recalc =
-       ((!ant.contains("td_aeff_t"))  ||
-        (!ant.contains("td_aeff_p")));
+	   ((!ant.contains("td_aeff_t"))||
+		(!ant.contains("td_aeff_p"))||
+		(!ant.contains("n_ffts"))	||
+		(!ant.contains("td_az"))	||
+		(!ant.contains("td_zen"))	||
+		(!ant.contains("td_ts"))	||
+		(!ant.contains("td_delay"))	||
+		(!ant.contains("td_loss")));
 
-    if (!recalc)
+
+	if (!recalc)
     {
-
         octave_value nfft = ant.getfield("n_ffts")(0);
         if (nfft.numel()!=1)
             recalc = true;
@@ -273,6 +282,30 @@ Calculate the signal received from a target or a signal transmitted from a certa
         }
     }
 
+	if (!recalc)
+	{
+		octave_value tsdelay = ant.getfield("td_delay")(0);
+		if (tsdelay.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsdelay.array_value()(0)-delay))>1e-15)
+				recalc = true;
+		}
+	}
+
+	if (!recalc)
+	{
+		octave_value tsloss = ant.getfield("td_loss")(0);
+		if (tsloss.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsloss.array_value()(0)-loss))>1e-15)
+				recalc = true;
+		}
+	}
+
     double az_min = ant.getfield("azimuth")(0).array_value().min()(0);
     double az_max = ant.getfield("azimuth")(0).array_value().max()(0);
 
@@ -294,12 +327,15 @@ Calculate the signal received from a target or a signal transmitted from a certa
     if (recalc)
     {
         octave_value_list params;
-        params.resize(5);
+		params.resize(7);
         params(0) = ant_dut;
         params(1) = NDArray(dim_vector({1,1}), ts * double(n_samples));
         params(2) = NDArray(dim_vector({1,1}), ts);
         params(3) = NDArray(dim_vector({1,1}), az);
         params(4) = NDArray(dim_vector({1,1}), zen);
+		params(5) = NDArray(dim_vector({1,1}), delay);
+		params(6) = NDArray(dim_vector({1,1}), loss);
+
         ant = ant_build_time_domain_angle(params).map_value();
     }
 
@@ -332,7 +368,7 @@ Calculate the signal received from a target or a signal transmitted from a certa
     if (freqs_fft.numel() < 2)
     {
         error("Error: only one frequency available");
-        return octave_value_list();
+		return octave_value_list();
     }
 
     // Resample RCS if needed (that should be done once in a separate function)

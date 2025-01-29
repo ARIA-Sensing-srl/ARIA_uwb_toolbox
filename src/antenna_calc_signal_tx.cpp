@@ -58,7 +58,7 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
     }
     octave_map ant = ant_dut.map_value();
 
-    if (!(args(1).isreal())||(args(1).numel()!=3))
+	if (!(args(1).isreal())||((args(1).numel()!=3)&&(args(1).numel()!=0)))
     {
         error("pos_ant must be a 3-values real vector");
     }
@@ -79,7 +79,7 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
     }
 
 
-    NDArray pos_ant = args(1).array_value();
+	NDArray pos_ant = args(1).numel() == 3 ? args(1).array_value() : ant.getfield("position")(0).array_value();
     NDArray pos     = args(2).array_value();
 
     // Make same dims
@@ -87,6 +87,8 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
         pos.reshape(pos_ant.dims());
 
     double  ts      = args(4).array_value()(0);
+	double  delay   = ant.getfield("fixed_delay")(0).array_value()(0);
+	double  loss    = ant.getfield("loss")(0).array_value()(0);
 
     // Delay
     NDArray delta   = (pos - pos_ant);
@@ -107,7 +109,10 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
         (!ant.contains("td_zen"))    ||
         (!ant.contains("td_tmax"))   ||
         (!ant.contains("td_ts"))     ||
-        (!ant.contains("n_ffts")));
+		(!ant.contains("n_ffts"))	 ||
+		(!ant.contains("td_delay"))	 ||
+		(!ant.contains("td_loss")));
+
 
 
     if (!recalc)
@@ -161,6 +166,29 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
         }
     }
 
+	if (!recalc)
+	{
+		octave_value tsdelay = ant.getfield("td_delay")(0);
+		if (tsdelay.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsdelay.array_value()(0)-delay))>1e-15)
+				recalc = true;
+		}
+	}
+
+	if (!recalc)
+	{
+		octave_value tsloss = ant.getfield("td_loss")(0);
+		if (tsloss.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsloss.array_value()(0)-loss))>1e-15)
+				recalc = true;
+		}
+	}
     double az_min = ant.getfield("azimuth")(0).array_value().min()(0);
     double az_max = ant.getfield("azimuth")(0).array_value().max()(0);
 
@@ -189,6 +217,9 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
         params(2) = NDArray(dim_vector({1,1}), ts);
         params(3) = NDArray(dim_vector({1,1}), az);
         params(4) = NDArray(dim_vector({1,1}), zen);
+		params(5) = NDArray(dim_vector({1,1}), delay);
+		params(6) = NDArray(dim_vector({1,1}), loss);
+
         ant = ant_build_time_domain_angle(params).map_value();
     }
 

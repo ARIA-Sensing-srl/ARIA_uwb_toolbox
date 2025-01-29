@@ -107,6 +107,10 @@ function retval = pre_install (install_data)
   mkoctfile f16tosingle.cpp
   printf("Done \n");
 
+  printf("Making Down Conversion...\n");
+  mkoctfile signal_downconvert.cpp uwb_toolbox_utils.cpp
+  printf("Done \n");
+
   printf("-----------------------------------\n");
   printf("ARIA Modules Control \n");
   printf("------------------------------------\n");

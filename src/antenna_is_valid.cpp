@@ -25,8 +25,11 @@
 ## Created: 2024-11-15
 */
 
+
+
 #include <octave/oct.h>
 #include <octave/ov-struct.h>
+#include "aria_uwb_toolbox.h"
 
 DEFUN_DLD(antenna_is_valid, args, , "-*- texinfo -*-\n\
 @deftypefn {} {@var{str_error} =} antenna_is_valid (@var{antenna_input})\n\
@@ -143,5 +146,48 @@ Otherwise it returns a string with the error \n\
         return octave_value(str_error);
     }
 
-    return octave_value(str_error);
+	// Check for "position" field
+	if (!ant.contains("position"))
+	{
+		str_error ="Antenna must contain position";
+		return octave_value(str_error);
+	}
+
+	if (!ant.getfield("position")(0).isreal())
+	{
+		str_error = "Position must be a real vector";
+		return octave_value(str_error);
+	}
+
+	if (ant.getfield("position")(0).numel()!=3)
+	{
+		str_error = "Position must be a 3 elements vector";
+		return octave_value(str_error);
+	}
+	// Check for "fixed_delay" field
+	if (!ant.contains("fixed_delay"))
+	{
+		str_error ="Antenna must contain fixed delay";
+		return octave_value(str_error);
+	}
+
+	if ((!ant.getfield("fixed_delay")(0).isreal())||(ant.getfield("fixed_delay")(0).numel()!=1))
+	{
+		str_error = "Fixed delay must be a real single value";
+		return octave_value(str_error);
+	}
+	// Check for "loss" field
+	if (!ant.contains("loss"))
+	{
+		str_error ="Antenna must contain fixed loss";
+		return octave_value(str_error);
+	}
+
+	if ((!ant.getfield("loss")(0).isreal())||(ant.getfield("loss")(0).numel()!=1))
+	{
+		str_error = "Loss must be a real single value";
+		return octave_value(str_error);
+	}
+
+	return octave_value(str_error);
 }

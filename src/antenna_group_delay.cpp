@@ -36,7 +36,6 @@ along the two components (Phi/Theta) \n\
 @end deftypefn")
 {
     octave_map aout;
-
     if (args.length() < 1)
     {
         print_usage();
@@ -53,13 +52,16 @@ along the two components (Phi/Theta) \n\
 
     octave_map ant = ant_dut.map_value();
     aout = ant;
-    ComplexNDArray ep = ant.getfield("ep")(0).array_value();
-    ComplexNDArray et = ant.getfield("et")(0).array_value();
+	ComplexNDArray ep = ant.getfield("ep")(0).complex_array_value();
+	ComplexNDArray et = ant.getfield("et")(0).complex_array_value();
     NDArray az = ant.getfield("azimuth")(0).array_value();
     int naz = az.numel();
     NDArray zen= ant.getfield("zenith")(0).array_value();
     int nzen= zen.numel();
     NDArray freq =ant.getfield("freq")(0).array_value();
+
+	double fixed_delay = ant.getfield("fixed_delay")(0).array_value()(0);
+
     int nf = freq.numel();
     if (nf==1)
     {
@@ -68,34 +70,50 @@ along the two components (Phi/Theta) \n\
     }
     NDArray gd_p(dim_vector({naz,nzen,nf-1}));
     NDArray gd_t(dim_vector({naz,nzen,nf-1}));
-    // Calculate phase with unwrapping (first, compensate for
-    double delay = REF_DISTANCE/C0;
+	// Calculate phase with unwrapping (first, compensate for fixed delay)
+	double delay = REF_DISTANCE/C0;
 
     for (int f = 0; f < nf-1; f++)
     {
         double freq1 = freq(f+1);
         double freq0 = freq(f);
-        std::complex reference_comp1 = std::exp(std::complex(0.0, M_2PI * freq1 * delay));
-        std::complex reference_comp0 = std::exp(std::complex(0.0, M_2PI * freq0 * delay));
         double df = freq1-freq0;
+		double d_omega = 2.0*M_PI*(df);
+		std::complex<double> reference_comp = std::exp(std::complex<double>(0.0, d_omega * delay));
+
         for (int a = 0; a < naz; a++)
             for (int z = 0; z < nzen; z++)
             {
-                std::complex<double> ep1 = ep(a,z,f+1)*reference_comp1;
-                std::complex<double> ep0 = ep(a,z,f)*reference_comp0;
-                double d_omega = 2.0*M_PI*(df);
-                double phase_p1 = std::arg(ep1);
-                double phase_p0 = std::arg(ep0);
+				std::complex<double> ep1 = ep(a,z,f+1);
+				std::complex<double> ep0 = ep(a,z,f);
 
-                gd_p(a,z,f) = delay+(phase_p0-phase_p1)/d_omega;
+
+				double d_phase_p = unwrap(std::arg(reference_comp*ep1*std::conj(ep0)));
+				double dpp_dw     = d_phase_p/d_omega;
+				gd_p(a,z,f) = fixed_delay + delay + dpp_dw;
+
+				std::complex<double> et1 = et(a,z,f+1);
+				std::complex<double> et0 = et(a,z,f);
+
+				double d_phase_t = unwrap(std::arg(reference_comp*et1*std::conj(et0)));
+				double dpt_dw     = d_phase_t/d_omega;
+				gd_t(a,z,f) = fixed_delay + delay + dpt_dw;
+				/*std::complex<double> ep1 = ep(a,z,f+1)*reference_comp1;
+                std::complex<double> ep0 = ep(a,z,f)*reference_comp0;
+
+				double phase_p1 = (std::arg(ep1));
+				double phase_p0 = (std::arg(ep0));
+
+				gd_p(a,z,f) = fixed_delay+delay+unwrap(phase_p0-phase_p1)/d_omega;
 
                 std::complex<double> et1 = et(a,z,f+1)*reference_comp1;
                 std::complex<double> et0 = et(a,z,f)*reference_comp0;
 
-                double phase_t1 = std::arg(et1);
-                double phase_t0 = std::arg(et0);
-
-                gd_t(a,z,f) = delay+(phase_t0-phase_t1)/d_omega;
+				double phase_t1 = (std::arg(et1));
+				double phase_t0 = (std::arg(et0));
+				// Gd = -dPhi/dW so use phase(f0)-phase(f1)
+				gd_t(a,z,f) = fixed_delay+delay+unwrap(phase_t0-phase_t1)/d_omega;
+				octave_stdout << delay << " : (" << fixed_delay << ",  " << (phase_t0-phase_t1)/d_omega << ") \n";*/
             }
     }
     aout.assign("gd_p",octave_value(gd_p));

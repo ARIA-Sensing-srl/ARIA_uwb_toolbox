@@ -14,13 +14,13 @@
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## -*- texinfo -*-
-## @deftypefn {} {@var{aout} =} antenna_rebuild_for_time_domain_single_angle (@var{antenna_input},@var{tmax},@var{ts}, @var{az}, @var{zen})
+## @deftypefn {} {@var{aout} =} antenna_rebuild_for_time_domain_single_angle (@var{antenna_input},@var{tmax},@var{ts},@var{azimuth},@var{zenith},@var{fixed_delay}, @var{loss})
 ##Resample the antenna to be compliant with a time-domain signal, along a preferred direction
 ##@var{antenna_input} is the input antenna \n\
-##@var{tmax} is a single value containing the maximum time for the time-domain signal
-##@var{ts} is the time sampling of the time-domain signal
-##@var{azimuth} is the azimuth angle of interest
-##@var{zenith} is the zenith angle of interest
+##@var{tmax} is a single value containing the maximum time for the time-domain signal \n\
+##@var{ts} is the time sampling of the time-domain signal \n\
+##@var{azimuth} is the azimuth angle of interest \n\
+##@var{zenith} is the zenith angle of interest \n\
 ##@end deftypefn
 
 ## Author: Alessio Cacciatori <alessioc@alessio-laptop>
@@ -33,16 +33,20 @@
 #include "aria_uwb_toolbox.h"
 
 DEFUN_DLD(antenna_rebuild_for_time_domain_single_angle, args, , "-*- texinfo -*-\n\
-@deftypefn {} {@var{aout} =} antenna_rebuild_for_time_domain (@var{antenna_input},@var{tmax},@var{ts})\n\
+@deftypefn {} {@var{aout} =} antenna_rebuild_for_time_domain (@var{antenna_input},@var{tmax},@var{ts},@var{azimuth},@var{zenith},@var{fixed_delay}, @var{loss})\n\
 Resample the antenna to be compliant with a time-domain signal\n\
 @var{antenna_input} is the input antenna \n\
 @var{tmax} is a single value containing the maximum time for the time-domain signal \n\
 @var{ts} is the time sampling of the time-domain signal \n\
 @var{azimuth} is the azimuth angle of interest \n\
 @var{zenith} is the zenith angle of interest \n\
+@var{fixed_delay} is the delay from front-end to antenna \n\
+@var{loss} is the fixed loss \n\
 @end deftypefn")
 {
-    if (args.length() != 5)
+	octave_value_list in(7);
+
+	if ((args.length() < 5)||(args.length()>7))
     {
         print_usage();
         return octave_value();
@@ -94,6 +98,40 @@ Resample the antenna to be compliant with a time-domain signal\n\
         error("zenith must be a single real value");
         return octave_value();
     }
+
+	NDArray fixed_delay(dim_vector({1,1}),0.0);
+	NDArray loss(dim_vector({1,1}),0.0);
+
+	if (args.length()>5)
+	{
+		dt_type_size ds = check_data_size(args(5));
+		if ((ds.type!=REAL)||(ds.size!=NUMBER))
+		{
+			error("fixed delay must be a single real value");
+			return octave_value();
+		}
+		fixed_delay = args(5).array_value();
+
+		if (args.length()>6)
+		{
+			dt_type_size ds = check_data_size(args(6));
+			if ((ds.type!=REAL)||(ds.size!=NUMBER))
+			{
+				error("loss must be a single real value");
+				return octave_value();
+			}
+			loss = args(6).array_value();
+		}
+	}
+	in(0) = args(0);
+	in(1) = args(1);
+	in(2) = args(2);
+	in(3) = args(3);
+	in(4) = args(4);
+	in(5) = fixed_delay;
+	in(6) = loss;
+
+
     // End of input check
     //----------------------------------------
 

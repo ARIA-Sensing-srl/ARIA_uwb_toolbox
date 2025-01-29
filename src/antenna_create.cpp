@@ -103,17 +103,17 @@ freqs is the array of frequencies \n\
     aout.assign("zenith",  zenith);
 
     dim_vector data_dim({naz,nzen,nf});
-    double delay = -REF_DISTANCE/C0; // Use REF_DISTANCE convention (put - sign so we don't have to do that later)
+	double delay = REF_DISTANCE/C0; // Use REF_DISTANCE convention (put - sign so we don't have to do that later)
 
     // We assume 1W over each frequency
     ComplexNDArray ep(data_dim);
     ComplexNDArray et(data_dim);
     // NB r = 1.0m by definition
-
+	double kPhase =  - M_PI * 2.0 * delay;
     for (int f=0; f < nf; f++)
     {
         double current_freq = freq(f);
-        std::complex et_f = std::exp(std::complex(0.0, M_2PI * current_freq * delay));
+		std::complex et_f = std::exp(std::complex(0.0, kPhase * current_freq));
         std::complex ep_f = std::complex<double>(0.0,0.0);
         double total_power   = 0.0;
         for (int z=0; z < nzen; z++)
@@ -139,6 +139,15 @@ freqs is the array of frequencies \n\
     aout.assign("ep", ep);
     aout.assign("et", et);
 
+	// Position, delay, and loss
+	NDArray position(dim_vector({3,1}),0.0);
+	aout.assign("position",position);
+
+	NDArray fix_delay(dim_vector({1,1}),0.0);
+	aout.assign("fixed_delay",fix_delay);
+
+	NDArray loss(dim_vector({1,1}),0.0);
+	aout.assign("loss",loss);
 
     return octave_value(aout);
 }
