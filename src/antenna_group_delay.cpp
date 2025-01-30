@@ -98,22 +98,7 @@ along the two components (Phi/Theta) \n\
 				double d_phase_t = unwrap(std::arg(reference_comp*et1*std::conj(et0)));
 				double dpt_dw     = d_phase_t/d_omega;
 				gd_t(a,z,f) = fixed_delay + delay + dpt_dw;
-				/*std::complex<double> ep1 = ep(a,z,f+1)*reference_comp1;
-                std::complex<double> ep0 = ep(a,z,f)*reference_comp0;
 
-				double phase_p1 = (std::arg(ep1));
-				double phase_p0 = (std::arg(ep0));
-
-				gd_p(a,z,f) = fixed_delay+delay+unwrap(phase_p0-phase_p1)/d_omega;
-
-                std::complex<double> et1 = et(a,z,f+1)*reference_comp1;
-                std::complex<double> et0 = et(a,z,f)*reference_comp0;
-
-				double phase_t1 = (std::arg(et1));
-				double phase_t0 = (std::arg(et0));
-				// Gd = -dPhi/dW so use phase(f0)-phase(f1)
-				gd_t(a,z,f) = fixed_delay+delay+unwrap(phase_t0-phase_t1)/d_omega;
-				octave_stdout << delay << " : (" << fixed_delay << ",  " << (phase_t0-phase_t1)/d_omega << ") \n";*/
             }
     }
     aout.assign("gd_p",octave_value(gd_p));

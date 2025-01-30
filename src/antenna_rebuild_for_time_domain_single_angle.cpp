@@ -135,5 +135,12 @@ Resample the antenna to be compliant with a time-domain signal\n\
     // End of input check
     //----------------------------------------
 
-    return ant_build_time_domain_angle(args);
+	return ant_build_time_domain_angle(args(0),
+									   args(1).array_value()(0),
+									   args(2).array_value()(0),
+									   args(3).array_value()(0),
+									   args(4).array_value()(0),
+									   args(5).array_value()(0),
+									   args(6).array_value()(0));
+
 }

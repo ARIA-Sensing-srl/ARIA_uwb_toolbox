@@ -34,16 +34,15 @@
 #include "aria_uwb_toolbox.h"
 
 DEFUN_DLD(antenna_calc_signal_tx, args, , "-*- texinfo -*-\n\
-@deftypefn {} {@var{aout} =} antenna_calc_signal_tx (@var{ant},@var{pos_ant}, @var{pos}, @var{signal}, @var{ts})\n\
+@deftypefn {} {@var{aout} =} antenna_calc_signal_tx (@var{ant}, @var{pos}, @var{signal}, @var{ts})\n\
 Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
 @var{ant} is the antenna, \n\
-@var{pos_ant} is the position of the antenna \n\
 @var{pos}     is the position where we calculated the radiated field \n\
 @var{signal}  is the signal. Please note that input ref. impedance is 50Ohm \n\
 @var{ts}      is the sampling interval for the input signal \n\
 @end deftypefn")
 {
-    if (args.length() != 5)
+	if (args.length() != 4)
     {
         print_usage();
         return octave_value_list();
@@ -63,30 +62,25 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
         error("pos_ant must be a 3-values real vector");
     }
 
-    if (!(args(2).isreal())||(args(2).numel()!=3))
-    {
-        error("pos must be a 3-values real vector");
-    }
-
-    if (args(3).numel()<2)
+	if (args(2).numel()<2)
     {
         error("signal must contain at least two samples");
     }
 
-    if (!(args(4).isreal())||(args(4).numel()!=1)||(args(4).array_value()(0)<=0))
+	if (!(args(3).isreal())||(args(3).numel()!=1)||(args(3).array_value()(0)<=0))
     {
         error("ts must be a single positive real value");
     }
 
 
-	NDArray pos_ant = args(1).numel() == 3 ? args(1).array_value() : ant.getfield("position")(0).array_value();
-    NDArray pos     = args(2).array_value();
+	NDArray pos_ant = ant.getfield("position")(0).array_value();
+	NDArray pos     = args(1).array_value();
 
     // Make same dims
     if (pos.dim1()!=pos_ant.dim1())
-        pos.reshape(pos_ant.dims());
+	{pos.reshape(pos_ant.dims());}
 
-    double  ts      = args(4).array_value()(0);
+	double  ts      = args(3).array_value()(0);
 	double  delay   = ant.getfield("fixed_delay")(0).array_value()(0);
 	double  loss    = ant.getfield("loss")(0).array_value()(0);
 
@@ -96,7 +90,7 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
 
     rect_to_polar(delta(0),delta(1),delta(2), az, zen, r);
 
-    int     n_samples= args(3).numel();
+	int     n_samples= args(2).numel();
 
     // Check if we need to update
     bool recalc =
@@ -210,25 +204,15 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
 
     if (recalc)
     {
-        octave_value_list params;
-        params.resize(5);
-        params(0) = ant_dut;
-        params(1) = NDArray(dim_vector({1,1}), ts * double(n_samples));
-        params(2) = NDArray(dim_vector({1,1}), ts);
-        params(3) = NDArray(dim_vector({1,1}), az);
-        params(4) = NDArray(dim_vector({1,1}), zen);
-		params(5) = NDArray(dim_vector({1,1}), delay);
-		params(6) = NDArray(dim_vector({1,1}), loss);
-
-        ant = ant_build_time_domain_angle(params).map_value();
-    }
+		ant = ant_build_time_domain_angle(ant_dut, ts*double(n_samples), ts, az, zen, delay, loss).map_value();
+	}
 
     // Antenna field is supposed calculated from a source that deliver available power = 1W
     // to a matched antenna (50Ohm). The implicit voltage at antenna terminals is therefore
     // a set of Vpk= sqrt(1W * 2 * 50) sine input.
     // The input signal is considered as voltage over a 50 Ohm load, so we have to scale by the
     // implicit voltage that we assumed during antenna creation / loading
-    ComplexNDArray in_fft = args(3).complex_array_value().fourier()/(r*sqrt(100));
+	ComplexNDArray in_fft = args(2).complex_array_value().fourier()/(r*sqrt(100));
 
     ComplexNDArray out_fft_ep, out_fft_et;
     ComplexNDArray epi = ant.getfield("td_ep")(0).complex_array_value();
@@ -249,7 +233,7 @@ Calculate the signal transmitted (ep, et) from the antenna to a certain point\n\
     int n_freq_of_interest = freqs_fft.numel();
 
     std::complex<double> comp_delay = std::complex<double>(1.0,0.0);
-    std::complex<double> dexp       = std::exp(std::complex(0.0, -M_2PI * df * (r-REF_DISTANCE)/C0));
+	std::complex<double> dexp       = std::exp(std::complex(0.0, -M_PI *2.0 * df * (r-REF_DISTANCE)/C0));
 
     for (int f =0 ; f < n_freq_of_interest; f++)
     {

@@ -17,13 +17,13 @@ div  = 4;
 mult = 18;
 fc = mult*fadc/div;     % Center frequency
 % Hydrogen
-bw = fadc/3;
+bw = fadc/4;
 
 %-----------------------------------------------
 % Create an omnidirectional antenna
 % E field is calculated with a 1W available power,
 % 50 Ohm source
-freqs     = fc-2*bw : 50e6 : fc+2*bw;
+freqs     = fc-3*bw : 50e6 : fc+3*bw;
 ant       = antenna_create(201,101,freqs);
 check     = antenna_is_valid(ant);
 if (!isempty(check))
@@ -47,7 +47,7 @@ printf("Tx Power Check --> \t \t \t ok\n");
 %------------------------------------------------
 % Check pwr_out over an arbitrary range of frequencies
 
-pwr_out_rs = antenna_radiated_power(ant,7e9:10e6:9e9);
+pwr_out_rs = antenna_radiated_power(ant,min(freqs):10e6:max(freqs));
 for f=pwr_out_rs
     if (abs(f-1)>1e-8)
     printf("Error in pwr_out resampled detected\n");
@@ -90,7 +90,7 @@ prt       = 1/prf;
   pulse_lt102 = 0.5*pulse_lt102 / max(abs(hilbert(pulse_lt102)));
 %----------------------------------
 % IEEE802.15.4z
-code = [1 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
+code = [1];% 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
 [pulse_ieee,tieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
   % Normalize
   pulse_ieee = 0.5*pulse_ieee / max(abs(hilbert(pulse_ieee)));
@@ -106,10 +106,13 @@ code = [1 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
 %----------------------------------
 % Let's compare pulses (ieee and hydrogen are given in baseband)
 figure(1);
-plot(t103,abs(hilbert(pulse_lt103)),'o-',...
-     t102,abs(hilbert(pulse_lt102)),'x-',...
-     tieee,pulse_ieee,'d-',...
-     t_hydrogen,pulse_hydrogen,'s-');
+plot(t103*1e9,abs(hilbert(pulse_lt103)),'o-',...
+     t102*1e9,abs(hilbert(pulse_lt102)),'x-',...
+     tieee*1e9,pulse_ieee,'d-',...
+     t_hydrogen*1e9,pulse_hydrogen,'s-');
+grid on;
+xlabel("time (ns)");
+ylabel("amplitude (V)");
 
 
 % Build a carrier with some phase noise
@@ -117,7 +120,7 @@ pn_freq = [1e3 10e3 100e3 1e6 10e6 100e6];
 pn_dbc  = [20 -20   -55   -80 -90  -90]+40;
 
 carrier_hydrogen = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc);
-carrier_ieee = signal_clock_phase_noise(tieee,fc, pn_freq, pn_dbc);
+carrier_ieee = signal_clock_phase_noise(tieee,499.2e6*16, pn_freq, pn_dbc);
 pulse_rf_ieee = pulse_ieee.*carrier_ieee;
 pulse_rf_hydrogen = pulse_hydrogen.*carrier_hydrogen;
 figure(2);
@@ -155,13 +158,55 @@ antenna_array_rx(4).position = [ 1.5*array_spacing, 0.0, -0.5*array_spacing];
 % Single Target
 Target_position = [-0.2,0,5];
 % Select Hydrogen source
+pulse_rf = pulse_rf_hydrogen;
+t_rf     = t_hydrogen;
+
+%-------------------------------------------
+% Check one single Tx antenna
+TxPos = antenna_array_tx(1).position;
+AntTx = antenna_array_tx(1);
+AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
+et_f  = AntTx.td_et;
+freqs = AntTx.td_freqs;
+
+et_s = AntTx.et(10,10,:);
+freq_s=AntTx.freq;
+
+figure(4);
+subplot(2,1,1);
+plot(freqs,abs(et_f),freq_s,abs(et_s));
+grid on;
+xlabel("Freq (Hz)");
+ylabel("Amplitude");
+title("Interpolated and Original Antenna functions");
+subplot(2,1,2);
+xlabel("Freq (Hz)");
+ylabel("Phase (rad)");
+title("Interpolated and Original Antenna functions");
+plot(freqs,arg(et_f),freq_s,arg(et_s));
+grid on;
+
+figure(5);
+plot(t_rf*1e9,real(AntTx.td_tx_et),t_rf*1e9,real(AntTx.td_tx_ep));
+xlabel("time (ns)");
+ylabel("E-field");
+title("Theta/Phi Electric Field vs Time");
+grid on;
+%-------------------------------------------
+% Now receive the target reflected signal
+AntRx = antenna_array_rx(1);
+AntRx.td_tx_ep = AntTx.td_tx_ep;
+AntRx.td_tx_et = AntTx.td_tx_et;
+AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, 0, 1);
+% Theoretical (radar range)
+RxSignal = real(AntRx.td_rx);
 
 
 
-##for t = 1:n_tx
-##    antenna_array_tx(t) = antenna_calc_signal_tx(antenna_array_tx(t), ...
-##                            antenna_array_tx(t).position, Target_position, pulse, ts);
-##endfor;
+
+
+% Build cell array
+Array = cell(n_tx,n_rx);
 
 
 

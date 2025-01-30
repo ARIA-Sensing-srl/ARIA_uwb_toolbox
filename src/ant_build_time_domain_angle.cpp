@@ -32,21 +32,14 @@
 #include <octave/parse.h>
 #include "aria_uwb_toolbox.h"
 
-octave_value ant_build_time_domain_angle(const octave_value_list& args)
+octave_value ant_build_time_domain_angle(const octave_value& antenna, double tmax, double ts, double az_angle, double zen_angle, double fixed_delay, double loss)
 {
 	// This procedure do not check for data!!!
-	octave_map  ant = args(0).map_value();
-	NDArray     tmax_array = args(1).array_value();
-	double      tmax = tmax_array(0);
-	NDArray     ts_array = args(2).array_value();
-	double		fixed_delay = args(3).array_value()(0);
-	double		loss		= args(4).array_value()(0);
-
+	octave_map  ant = antenna.map_value();
 	// If we don't have directivity data, let's calculate
 	if (!(ant.contains("aeff_p"))||(!(ant.contains("aeff_t"))))
 		ant = directivity(octave_value_list(ant)).map_value();
 
-	double ts = ts_array(0);
 	int nsamples = std::floor(tmax / ts);
 
 	double df = 1.0/(double(nsamples)*ts);
@@ -67,8 +60,8 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	interp_args(1) = zenith;
 	interp_args(2) = freq_ant;
 
-	interp_args(4) = args(3);
-	interp_args(5) = args(4);
+	interp_args(4) = az_angle;
+	interp_args(5) = zen_angle;
 	interp_args(6) = freq_ant;
 	interp_args(7) = "linear";
 	interp_args(8) = 0;
@@ -93,7 +86,7 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	int         nf_start  = freq_ant.numel();
 	double      f_ant_min = freq_ant.min()(0);
 	double      f_ant_max = freq_ant.max()(0);
-	double      f_skip = 500e6;
+	double      f_skip = 1e9;
 	double      fsim_max = 1.0/(ts*2.0);
 	int         extra_freqs_low;
 	int         extra_freqs_high;
@@ -195,7 +188,7 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	{
 		double curr_freq= freq_ant(fs);
 		freq_start(f)   = curr_freq;
-		std::complex<double> comp_delay = loss_factor*std::exp(std::complex(0.0, M_2PI * curr_freq * delay));
+		std::complex<double> comp_delay = loss_factor*std::exp(std::complex(0.0, 2.0 * M_PI * curr_freq * delay));
 		ep_start(f)     = ep_ant(fs) * comp_delay;
 		et_start(f)     = et_ant(fs) * comp_delay;
 		aeffp_start(f)  = aeffp_ant(fs) * comp_delay;
@@ -211,7 +204,7 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	NDArray        diri = octave::feval("interp1",octave_value_list({freq_start, dir_start, freq_of_interests, "linear", 0}))(0).array_value();
 	int n_foi = freq_of_interests.numel();
 	std::complex<double> comp_delay = std::complex<double>(1.0,0.0);
-	std::complex<double> dexp       = std::exp(std::complex(0.0, -M_2PI * df * delay));
+	std::complex<double> dexp       = std::exp(std::complex(0.0, -2.0* M_PI * df * delay));
 	for (int fi = 0; fi < n_foi; fi++)
 	{
 		epi(fi)*=comp_delay;
@@ -227,11 +220,11 @@ octave_value ant_build_time_domain_angle(const octave_value_list& args)
 	ant.assign("td_aeffp",  octave_value(aepi));
 	ant.assign("td_aefft",  octave_value(aeti));
 
-	ant.assign("td_az",      azimuth);
-	ant.assign("td_zen",     zenith);
+	ant.assign("td_az",      octave_value(az_angle));
+	ant.assign("td_zen",     octave_value(zen_angle));
 
-	ant.assign("td_tmax",   octave_value(tmax_array));
-	ant.assign("td_ts",     octave_value(ts_array));
+	ant.assign("td_tmax",   octave_value(tmax));
+	ant.assign("td_ts",     octave_value(ts));
 	ant.assign("n_ffts",    octave_value(nsamples));
 
 	ant.assign("td_delay",	octave_value(fixed_delay));

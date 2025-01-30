@@ -17,10 +17,7 @@
 ##@deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant},@var{pos_ant}, @var{pos}, @var{signal}, @var{ts})\n\
 ## Calculate the signal received (ep, et) from the antenna to a certain point\n\
 ## @var{ant} is the antenna, \n\
-## @var{pos_ant} is the position of the antenna \n\
 ## @var{pos}     is the position where we calculated the radiated field \n\
-## @var{signal_ep}  is the electric fielad along p polarization radiated from @var{pos}\n\
-## @var{signal_et}  is the electric fielad along t polarization radiated from @var{pos}.\n\
 ## @var{ts}      is the sampling interval for the input signal \n\
 ## @var{do_noise}   is 1 to add thermal noise \n\
 ## @var{rcs}        is the rcs matrix over frequency (2,2,n) \n\
@@ -43,21 +40,18 @@ enum RCS_TYPE
 };
 
 DEFUN_DLD(antenna_calc_signal_rx, args, , "-*- texinfo -*-\n\
-@deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant},@var{pos_ant}, @var{pos}, @var{signal_ep},@var{signal_ep}, \
+@deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant}, @var{pos}, \
 @var {donoise},@var{ts} ,@var{rcs}, @var{rcs_freq})\n\
 Calculate the signal received from a target or a signal transmitted from a certain point \n\
-@var{ant} is the antenna, \n\
-@var{pos_ant} is the position of the antenna. If empty, use antenna declared position\n\
-@var{pos}     is the position where we calculated the radiated field \n\
-@var{signal_ep}  is the electric fielad along p polarization radiated from @var{pos}\n\
-@var{signal_et}  is the electric fielad along t polarization radiated from @var{pos}.\n\
-@var{ts}         is the sampling interval for the input signal \n\
-@var{do_noise}   is 1 to add thermal noise \n\
-@var{rcs}        is the rcs matrix over frequency (2,2,n) \n\
-@var{rcs_freq}   is the rcs frequency support \n\
+@var{ant}			is the antenna, \n\
+@var{pos}			is the position where we calculated the radiated field \n\
+@var{ts}			is the sampling interval for the input signal \n\
+@var{do_noise}		is 1 to add thermal noise \n\
+@var{rcs}			is the rcs (it can be a number or a matrix over frequency (2,2,n)) \n\
+@var{rcs_freq}		is the rcs frequency support \n\
 @end deftypefn")
 {
-    if (args.length() < 7)
+	if (args.length() < 4)
     {
         print_usage();
         return octave_value_list();
@@ -80,47 +74,23 @@ Calculate the signal received from a target or a signal transmitted from a certa
 
 	if (!(args(1).isreal())||((args(1).numel()!=3)&&(args(1).numel()!=0)))
     {
-		error("pos_ant must be a 3-values or empty real vector");
+		error("pos must be a 3-values or empty real vector");
         return octave_value();
     }
 
-    if (!(args(2).isreal())||(args(2).numel()!=3))
-    {
-        error("pos must be a 3-values real vector");
-        return octave_value();
-    }
-
-    if (args(3).numel()<2)
-    {
-        error("Ep must contain at least two samples");
-        return octave_value();
-    }
-
-    if (args(4).numel()<2)
-    {
-        error("Et must contain at least two samples");
-        return octave_value();
-    }
-
-    if (args(3).numel()!=args(4).numel())
-    {
-        error("Et, Ep size mismatch");
-        return octave_value();
-    }
-
-    if (!(args(5).isreal())||(args(5).numel()!=1)||(args(5).array_value()(0)<=0))
+	if (!(args(2).isreal())||(args(2).numel()!=1)||(args(2).array_value()(0)<=0))
     {
         error("ts must be a single positive real value");
     }
 
     int do_noise = 0;
-    if (!(args(6).isreal())||(args(6).numel()!=1))
+	if (!(args(3).isreal())||(args(3).numel()!=1))
     {
         error("do noise must be 1 or 0");
         return octave_value();
     }
 
-    do_noise = int(args(6).array_value()(0));
+	do_noise = int(args(3).array_value()(0));
     if ((do_noise != 0)&&(do_noise != 1))
     {
         error("do noise must be 1 or 0");
@@ -133,14 +103,14 @@ Calculate the signal received from a target or a signal transmitted from a certa
     ComplexNDArray       rcs;
     NDArray              rcs_freqs;
 
-    if (args.length()==7)
+	if (args.length()==4)
     {
         rcs_type = RCS_NUMBER;
         rcs.resize(dim_vector({1,1}), std::complex<double>(1.0,0.0));
     }
     else
     {
-        rcs = args(7).complex_array_value();
+		rcs = args(4).complex_array_value();
         // 1x1
         if (rcs.numel()==1)
            rcs_type=RCS_NUMBER;
@@ -150,21 +120,21 @@ Calculate the signal received from a target or a signal transmitted from a certa
         {
             rcs_type=RCS_NUMBER_FREQ;
             // Check for correct frequencies
-            if (args.length()!=9)
+			if (args.length()!=6)
             {
                 error("Frequency support for RCS is missing");
                 return octave_value();
             }
 
-            if (!(args(8).isreal())||
-                ((args(8).dims()(0)!=1)&&(args(8).dims()(1)!=2))||
-                (args(8).numel()!=rcs.numel()))
+			if (!(args(5).isreal())||
+				((args(5).dims()(0)!=1)&&(args(5).dims()(1)!=2))||
+				(args(5).numel()!=rcs.numel()))
             {
                 error("RCS Freq support must be same size as RCS");
                 return octave_value();
             }
 
-            rcs_freqs = args(8).array_value();
+			rcs_freqs = args(5).array_value();
         }
 
         // 2x2xN
@@ -175,15 +145,15 @@ Calculate the signal received from a target or a signal transmitted from a certa
                 rcs_type=RCS_MATRIX_FREQ;
 
                 // Check for correct frequencies
-                if (args.length()!=9)
+				if (args.length()!=6)
                 {
                     error("Frequency support for RCS is missing");
                     return octave_value();
                 }
 
-                if (!(args(8).isreal())||
-                    ((args(8).dims()(0)!=1)&&(args(8).dims()(1)!=2))||
-                    (args(8).numel()!=rcs.dim3()))
+				if (!(args(5).isreal())||
+					((args(5).dims()(0)!=1)&&(args(5).dims()(1)!=2))||
+					(args(5).numel()!=rcs.dim3()))
                 {
                     error("RCS Freq support must be same size as RCS");
                     return octave_value();
@@ -195,19 +165,19 @@ Calculate the signal received from a target or a signal transmitted from a certa
 
         if (rcs_type==RCS_UNDEF)
         {
-            error("RCS Data malformed");
+			error("Verify RCS Data size");
             return octave_value();
         }
     }
 
-	NDArray pos_ant = args(1).numel() == 3 ? args(1).array_value() : ant.getfield("position")(0).array_value();
-    NDArray pos     = args(2).array_value();
+	NDArray pos_ant = ant.getfield("position")(0).array_value();
+	NDArray pos     = args(1).array_value();
 
     // Make same dims
     if (pos.dim1()!=pos_ant.dim1())
-        pos.reshape(pos_ant.dims());
+	{ pos.reshape(pos_ant.dims()); }
 
-    double  ts      = args(5).array_value()(0);
+	double  ts      = args(2).array_value()(0);
 	double  delay   = ant.getfield("fixed_delay")(0).array_value()(0);
 	double  loss    = ant.getfield("loss")(0).array_value()(0);
 
@@ -217,8 +187,6 @@ Calculate the signal received from a target or a signal transmitted from a certa
     double  az, zen, r;
 
     rect_to_polar(delta(0),delta(1),delta(2), az, zen, r);
-
-    int     n_samples= args(3).numel();
 
     // Check if we need to update
     bool recalc =
@@ -231,16 +199,28 @@ Calculate the signal received from a target or a signal transmitted from a certa
 		(!ant.contains("td_delay"))	||
 		(!ant.contains("td_loss")));
 
+	ComplexNDArray td_ep;
+	ComplexNDArray td_et;
+	int n_samples = 0;
+	if (ant.contains("td_tx_ep"))
+		td_ep = ant.getfield("td_tx_ep")(0).complex_array_value();
+
+	if (ant.contains("td_tx_ep"))
+		td_et = ant.getfield("td_tx_et")(0).complex_array_value();
+
+	n_samples = td_et.numel() > td_ep.numel() ? td_et.numel() : td_ep.numel();
 
 	if (!recalc)
     {
         octave_value nfft = ant.getfield("n_ffts")(0);
         if (nfft.numel()!=1)
-            recalc = true;
+		{ recalc = true; n_samples = nfft.array_value()(0);}
         else
         {
-            if (nfft.array_value()(0)!=n_samples)
+			if ((td_ep.numel()==td_et.numel())||(nfft.array_value()(0)!=td_et.numel()))
                 recalc = true;
+			else
+				n_samples = td_ep.numel();
         }
     }
 
@@ -325,18 +305,8 @@ Calculate the signal received from a target or a signal transmitted from a certa
         zen-=M_2PI;
 
     if (recalc)
-    {
-        octave_value_list params;
-		params.resize(7);
-        params(0) = ant_dut;
-        params(1) = NDArray(dim_vector({1,1}), ts * double(n_samples));
-        params(2) = NDArray(dim_vector({1,1}), ts);
-        params(3) = NDArray(dim_vector({1,1}), az);
-        params(4) = NDArray(dim_vector({1,1}), zen);
-		params(5) = NDArray(dim_vector({1,1}), delay);
-		params(6) = NDArray(dim_vector({1,1}), loss);
-
-        ant = ant_build_time_domain_angle(params).map_value();
+	{
+		ant = ant_build_time_domain_angle(ant_dut, ts*double(n_samples), ts, az, zen, delay, loss).map_value();
     }
 
     //-----------------------------------------------------------------------------------------
@@ -349,8 +319,8 @@ Calculate the signal received from a target or a signal transmitted from a certa
     //-----------------------------------------------------------------------------------------
     // When we calculate the output voltage, we move from the power domain, to the voltage domain
     // so P = V^2/(2*Z0) => V = sqrt(P * 2 * Z0)
-    ComplexNDArray in_fft_ep = args(3).complex_array_value().fourier()*sqrt(100*ONE_OVER_ETA0)/(r*sqrt(4.0*M_PI));
-    ComplexNDArray in_fft_et = args(4).complex_array_value().fourier()*sqrt(100*ONE_OVER_ETA0)/(r*sqrt(4.0*M_PI));
+	ComplexNDArray in_fft_ep = td_ep.fourier()*sqrt(100*ONE_OVER_ETA0)/(r*sqrt(4.0*M_PI));
+	ComplexNDArray in_fft_et = td_et.fourier()*sqrt(100*ONE_OVER_ETA0)/(r*sqrt(4.0*M_PI));
 
     ComplexNDArray out_fft;
 

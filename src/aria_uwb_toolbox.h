@@ -50,8 +50,8 @@ octave_value interp_field(const octave_value& field_in,
 
 octave_value directivity(const octave_value_list& args);
 
-octave_value ant_build_time_domain_angle(const octave_value_list& args);
-
+//octave_value ant_build_time_domain_angle(const octave_value_list& args);
+octave_value ant_build_time_domain_angle(const octave_value& antenna, double tmax, double ts, double az_angle, double zen_angle, double fixed_delay, double loss);
 // Check if this is a vector
 dt_type_size check_data_size(const octave_value& data);
 
