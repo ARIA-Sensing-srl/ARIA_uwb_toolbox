@@ -15,14 +15,14 @@
 
 ## -*- texinfo -*-
 ##@deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant},@var{pos_ant}, @var{pos}, @var{signal}, @var{ts})\n\
-## Calculate the signal received (ep, et) from the antenna to a certain point\n\
+## Calculate the signal received from a receiving antenna in Tx->Target->Rx mode \n\
 ## @var{ant} is the antenna, \n\
-## @var{pos}     is the position where we calculated the radiated field \n\
-## @var{ts}      is the sampling interval for the input signal \n\
+## @var{pos}		is the position of the target \n\
+## @var{ts}			is the sampling interval for the input signal \n\
 ## @var{do_noise}   is 1 to add thermal noise \n\
 ## @var{rcs}        is the rcs matrix over frequency (2,2,n) \n\
 ## @var{rcs_freq}   is the rcs frequency support \n\
-## @seealso{}
+## @seealso{antenna_calc_signal_rx_los}
 ## @end deftypefn
 
 ## Author: Alessio Cacciatori <alessioc@alessio-laptop>
@@ -42,9 +42,9 @@ enum RCS_TYPE
 DEFUN_DLD(antenna_calc_signal_rx, args, , "-*- texinfo -*-\n\
 @deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant}, @var{pos}, \
 @var {donoise},@var{ts} ,@var{rcs}, @var{rcs_freq})\n\
-Calculate the signal received from a target or a signal transmitted from a certain point \n\
+Calculate the signal received from a receiving antenna in Tx->Target->Rx mode \n\
 @var{ant}			is the antenna, \n\
-@var{pos}			is the position where we calculated the radiated field \n\
+@var{pos}			is the position of the target \n\
 @var{ts}			is the sampling interval for the input signal \n\
 @var{do_noise}		is 1 to add thermal noise \n\
 @var{rcs}			is the rcs (it can be a number or a matrix over frequency (2,2,n)) \n\

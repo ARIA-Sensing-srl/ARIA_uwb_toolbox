@@ -11,13 +11,14 @@ pkg load aria_uwb_toolbox;
 C0 = 299792458;
 %-----------------------------
 % Input data
-
+%-----------------------------
+% Settings for Hydrogen SoC
 fadc= 1.792e9;% ADC Conversion frequency
 div  = 4;
 mult = 18;
 fc = mult*fadc/div;     % Center frequency
 % Hydrogen
-bw = fadc/4;
+bw = fadc/3;
 
 %-----------------------------------------------
 % Create an omnidirectional antenna
@@ -232,10 +233,33 @@ for t = 1:n_tx
     AntRx.td_tx_ep = AntTx.td_tx_ep;
     AntRx.td_tx_et = AntTx.td_tx_et;
     AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
-    Array{t,r} = real(AntRx.td_rx);
+    % Down-convert. Here we have a radar so we use the same carrier
+
+    Array{t,r} = signal_downconvert(real(AntRx.td_rx), carrier_hydrogen, fs, 2e9);
   endfor;
 endfor;
+%-------------------------------------------
+% Calculate kernel for
 
+
+%-------------------------------------------
+% Expand the single antenna example to the MIMO
+% domain
+
+figure;
+
+for t = 1:n_tx
+    for r = 1:n_rx
+        plot(t_rf*1e9, Array{t,r});
+        hold on;
+    endfor;
+endfor;
+xlabel("time (ns)");
+ylabel("Rx signal (V)");
+title("Array Received signals");
+grid on;
+
+hold off;
 
 
 

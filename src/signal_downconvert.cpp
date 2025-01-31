@@ -33,7 +33,7 @@
 #include "aria_uwb_toolbox.h"
 
 
-DEFUN_DLD(signal_downconver, args, , "-*- texinfo -*-\n\
+DEFUN_DLD(signal_downconvert, args, , "-*- texinfo -*-\n\
 @deftypefn {} {@var{signal_bb_out} =} signal_downcovert (@var{rf_in}, @var{rf_signal_or_frf}, @var{fs}, @var{fmax})\n\
 Down-convert the input signal with a given RF signal \n\
 @var{rf_in}							is the input signal. If rf_in is a matrix, the down-conversion is performed over each row \n\
@@ -48,37 +48,37 @@ Down-convert the input signal with a given RF signal \n\
 		return octave_value();
 	}
 
+	int ndims = args(0).dims().ndims();
+	int nones = args(0).dims().num_ones();
 
-	dt_type_size ds_in = check_data_size(args(0));
-
-	if ((ds_in.size!=VECTOR)&&(ds_in.size!=MATRIX_2D))
+	if (2!=ndims)
 	{
 		error("rf_in must be either a vector or a 2d-matrix\n");
 		return octave_value();
 	}
 
-	bool bRFMatrix = ds_in.size == MATRIX_2D;
+	bool bRFMatrix = nones == 0;
 
-	if (ds_in.type!=REAL)
+	if (!args(0).isreal())
 	{
 		error("rf_in must be real\n");
 		return octave_value();
 	}
 	NDArray rf_in = args(0).array_value();
 
-	octave_idx_type npts = bRFMatrix ? args(2).dims()(1) : args(2).numel();
-	octave_idx_type nsignals = bRFMatrix ? args(2).dims()(0) : 1;
+	octave_idx_type npts = bRFMatrix ? args(0).dims()(1) : args(0).numel();
+	octave_idx_type nsignals = bRFMatrix ? args(0).dims()(0) : 1;
 
+	ndims = args(1).dims().ndims();
+	nones = args(1).dims().num_ones();
 
-	dt_type_size ds_rf = check_data_size(args(1));
-
-	if ((ds_rf.size!=VECTOR)||(ds_rf.size!=NUMBER))
+	if ((2!=ndims)||(nones==0))
 	{
 		error("rf_signal_or_frf must be a single real value or a vector");
 		return octave_value();
 	}
 
-	bool bFreqGiven = ds_rf.size == NUMBER;
+	bool bFreqGiven = nones==2;
 	NDArray dc_signal_real;
 	NDArray dc_signal_imag;
 	double frf=0.;
@@ -86,7 +86,7 @@ Down-convert the input signal with a given RF signal \n\
 
 	if (bFreqGiven)
 	{
-		if (ds_rf.type!=REAL)
+		if (args(1).isreal())
 		{
 			error("if center ferquency is given, it must be real");
 			return octave_value();
@@ -102,7 +102,7 @@ Down-convert the input signal with a given RF signal \n\
 			return octave_value();
 		}
 
-		if (ds_rf.type==COMPLEX)
+		if (args(1).iscomplex())
 		{
 			dc_signal_real = args(1).real().array_value();
 			dc_signal_imag = args(1).imag().array_value();
@@ -113,9 +113,9 @@ Down-convert the input signal with a given RF signal \n\
 		}
 	}
 
-	bool bComplexIn = ds_rf.type == COMPLEX;
+	bool bComplexIn = args(1).iscomplex();
 
-	ds_in = check_data_size(args(2));
+	dt_type_size ds_in = check_data_size(args(2));
 
 	if ((ds_in.size!=NUMBER)||(ds_in.type != REAL))
 	{
@@ -216,11 +216,10 @@ Down-convert the input signal with a given RF signal \n\
 
 	// Low-pass filter
 	double df = fs / (double)(npts);
-	ComplexNDArray fft=	data_out.fourier(2);
+	ComplexNDArray fft=	bRFMatrix ? data_out.fourier(2) : data_out.fourier();
 
 	double f_upper = fmax;
 	double f_lower = fs - fmax;
-
 	if (bRFMatrix)
 	{
 		for (int s=0; s < nsignals; s++)
@@ -243,7 +242,12 @@ Down-convert the input signal with a given RF signal \n\
 		}
 	}
 
-	data_out = fft.ifourier(2);
+	if (bRFMatrix)	{
+		data_out = fft.ifourier(2);
+	}
+	else {
+		data_out = fft.ifourier();
+	}
 
 	return octave_value(data_out);
 }

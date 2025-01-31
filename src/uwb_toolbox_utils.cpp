@@ -59,7 +59,7 @@ dt_type_size check_data_size(const octave_value& data)
     }
 
     dim_vector vdims = data.dims();
-    int ndim = data.ndims();
+	int ndim = vdims.ndims();
 
     if (vdims.num_ones() == ndim-1)
     {
