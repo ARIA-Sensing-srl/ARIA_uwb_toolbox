@@ -12,13 +12,14 @@
   rebuild_antenna_group_delay = 0 | force_build;
   rebuild_antenna_rebuild_for_time_domain = 0 | force_build;
   rebuild_signal_uwb_pulse = 0 | force_build;
-  rebuild_antenna_calc_signal_tx = 1 | force_build;
-  rebuild_antenna_rebuild_for_time_domain_single_angle = 1 | force_build;
-  rebuild_antenna_calc_signal_rx = 1 | force_build;
+  rebuild_antenna_calc_signal_tx = 0 | force_build;
+  rebuild_antenna_rebuild_for_time_domain_single_angle = 0 | force_build;
+  rebuild_antenna_calc_signal_rx = 0 | force_build;
+  rebuild_antenna_calc_signal_rx_los = 0 | force_build;
   rebuild_signal_clock_phase_noise = 0 | force_build;
   rebuild_pm_demod = 0 | force_build;
   rebuild_signal_build_correlation_kernel = 0 | force_build;
-  rebuild_signal_downconvert = 0 | force_build;
+  rebuild_signal_downconvert = 1 | force_build;
 
 
 if exclude_build==0
@@ -76,7 +77,7 @@ if exclude_build==0
       clear antenna_calc_signal_tx
       printf("Making antenna tx...\n");
       mkoctfile antenna_calc_signal_tx.cpp uwb_toolbox_utils.cpp ant_build_time_domain_angle.cpp
-      printf("Done \n");
+          printf("Done \n");
   endif
 
   if rebuild_antenna_rebuild_for_time_domain_single_angle == 1
@@ -90,6 +91,13 @@ if exclude_build==0
       clear antenna_calc_signal_rx
       printf("Making antenna rx...\n");
       mkoctfile antenna_calc_signal_rx.cpp uwb_toolbox_utils.cpp ant_build_time_domain_angle.cpp
+      printf("Done \n");
+  endif
+
+  if rebuild_antenna_calc_signal_rx_los == 1
+      clear antenna_calc_signal_rx_los
+      printf("Making antenna rx...\n");
+      mkoctfile antenna_calc_signal_rx_los.cpp uwb_toolbox_utils.cpp ant_build_time_domain_angle.cpp
       printf("Done \n");
   endif
 
