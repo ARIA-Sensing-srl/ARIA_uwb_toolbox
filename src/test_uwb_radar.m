@@ -11,13 +11,14 @@ pkg load aria_uwb_toolbox;
 C0 = 299792458;
 %-----------------------------
 % Input data
-
+%-----------------------------
+% Settings for Hydrogen SoC
 fadc= 1.792e9;% ADC Conversion frequency
 div  = 4;
 mult = 18;
 fc = mult*fadc/div;     % Center frequency
 % Hydrogen
-bw = fadc/4;
+bw = fadc/3;
 
 %-----------------------------------------------
 % Create an omnidirectional antenna
@@ -156,14 +157,14 @@ antenna_array_rx(4).position = [ 1.5*array_spacing, 0.0, -0.5*array_spacing];
 
 %-------------------------------------------
 % Single Target
-Target_position = [-0.2,0,5];
+Target_position = [-0.2,0,3];
+Target_RCS = 1;
 % Select Hydrogen source
 pulse_rf = pulse_rf_hydrogen;
 t_rf     = t_hydrogen;
 
 %-------------------------------------------
 % Check one single Tx antenna
-TxPos = antenna_array_tx(1).position;
 AntTx = antenna_array_tx(1);
 AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
 et_f  = AntTx.td_et;
@@ -187,9 +188,10 @@ plot(freqs,arg(et_f),freq_s,arg(et_s));
 grid on;
 
 figure(5);
+subplot(2,1,1);
 plot(t_rf*1e9,real(AntTx.td_tx_et),t_rf*1e9,real(AntTx.td_tx_ep));
 xlabel("time (ns)");
-ylabel("E-field");
+ylabel("E-field (V/m)");
 title("Theta/Phi Electric Field vs Time");
 grid on;
 %-------------------------------------------
@@ -197,16 +199,67 @@ grid on;
 AntRx = antenna_array_rx(1);
 AntRx.td_tx_ep = AntTx.td_tx_ep;
 AntRx.td_tx_et = AntTx.td_tx_et;
-AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, 0, 1);
+DoNoise = 0;
+AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
 % Theoretical (radar range)
 RxSignal = real(AntRx.td_rx);
+figure(5);
+subplot(2,1,2);
+plot(t_rf*1e9, RxSignal);
+xlabel("time (ns)");
+ylabel("Rx signal (V)");
+title("Received signals");
+grid on;
+% Theoretical link budget (assume radar centered in (0,0,0))
+d = norm(Target_position);
+theoretical_link_loss = 10*log10(Target_RCS * C0.^2 * max(max(max(AntTx.dir_abs)))^2 / ((4*pi)^3 * fc^2 * d^4));
+simulated_link_loss = -20*log10(max(abs(hilbert(pulse_rf)))/max(abs(hilbert(RxSignal))));
 
+printf("Simulated   Link Loss : \t %3.4g dB \n", simulated_link_loss);
+printf("Theoretical Link Loss : \t %3.4g dB \n", theoretical_link_loss);
 
-
-
+%-------------------------------------------
+% Expand the single antenna example to the MIMO
+% domain
 
 % Build cell array
 Array = cell(n_tx,n_rx);
+
+for t = 1:n_tx
+  AntTx = antenna_array_tx(t);
+  AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
+  for r = 1:n_rx
+    AntRx = antenna_array_rx(r);
+    AntRx.td_tx_ep = AntTx.td_tx_ep;
+    AntRx.td_tx_et = AntTx.td_tx_et;
+    AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
+    % Down-convert. Here we have a radar so we use the same carrier
+
+    Array{t,r} = signal_downconvert(real(AntRx.td_rx), carrier_hydrogen, fs, 2e9);
+  endfor;
+endfor;
+%-------------------------------------------
+% Calculate kernel for
+
+
+%-------------------------------------------
+% Expand the single antenna example to the MIMO
+% domain
+
+figure;
+
+for t = 1:n_tx
+    for r = 1:n_rx
+        plot(t_rf*1e9, Array{t,r});
+        hold on;
+    endfor;
+endfor;
+xlabel("time (ns)");
+ylabel("Rx signal (V)");
+title("Array Received signals");
+grid on;
+
+hold off;
 
 
 
