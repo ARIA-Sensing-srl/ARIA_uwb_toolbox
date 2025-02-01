@@ -35,6 +35,9 @@ printf("Creation and validity check --> \t ok\n");
 
 %------------------------------------------------
 % Check pwr_out.
+
+pwr_check = 0;
+if pwr_check==1
 pwr_out = antenna_radiated_power(ant);
 for f=pwr_out
     if (abs(f-1)>1e-12)
@@ -69,16 +72,17 @@ printf(" Max Directivity: \t %3.3g \n",max(max(max(ant.dir_abs))));
 ant = antenna_group_delay(ant);
 printf(" Max Group Delay: \t %3.3g \n", max(max(max(ant.gd_t))));
 
-
+end
 %---------------------------------------------------
 % Build different radar pulses
-max_range = 10;
+max_range = 20;
 tmax      = 2* max_range / C0;
 % Simulation sampling frequency
 fs        = 40e9;
 ts        = 1.0/fs;
 prf       = 12e6;
 prt       = 1/prf;
+
 %----------------------------------
 % LT103xxx
 [pulse_lt103,t103] = signal_uwb_pulse("lt103", 5e-9, tmax, ts, 1, prt );
@@ -91,8 +95,8 @@ prt       = 1/prf;
   pulse_lt102 = 0.5*pulse_lt102 / max(abs(hilbert(pulse_lt102)));
 %----------------------------------
 % IEEE802.15.4z
-code = [1];% 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
-[pulse_ieee,tieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
+code = [1 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
+[pulse_ieee,t_ieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
   % Normalize
   pulse_ieee = 0.5*pulse_ieee / max(abs(hilbert(pulse_ieee)));
 
@@ -100,7 +104,7 @@ code = [1];% 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
 % Hydrogen
 
 [pulse_hydrogen,t_hydrogen] = signal_uwb_pulse("hydrogen", 1.0/bw, tmax, ts, code, 1.0/bw);
-% Normalie
+% Normalize
   pulse_hydrogen = 0.25*pulse_hydrogen / max(abs(hilbert(pulse_hydrogen)));
 
 
@@ -109,8 +113,9 @@ code = [1];% 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
 figure(1);
 plot(t103*1e9,abs(hilbert(pulse_lt103)),'o-',...
      t102*1e9,abs(hilbert(pulse_lt102)),'x-',...
-     tieee*1e9,pulse_ieee,'d-',...
+     t_ieee*1e9,pulse_ieee,'d-',...
      t_hydrogen*1e9,pulse_hydrogen,'s-');
+title("UWB Pulses, envelops");
 grid on;
 xlabel("time (ns)");
 ylabel("amplitude (V)");
@@ -118,12 +123,12 @@ ylabel("amplitude (V)");
 
 % Build a carrier with some phase noise
 pn_freq = [1e3 10e3 100e3 1e6 10e6 100e6];
-pn_dbc  = [20 -20   -55   -80 -90  -90]+40;
+pn_dbc  = [20 -20   -55   -80 -90  -90];
 
-carrier_hydrogen = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc);
-carrier_ieee = signal_clock_phase_noise(tieee,499.2e6*16, pn_freq, pn_dbc);
-pulse_rf_ieee = pulse_ieee.*carrier_ieee;
-pulse_rf_hydrogen = pulse_hydrogen.*carrier_hydrogen;
+carrier_hydrogen  = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc+40);
+carrier_ieee      = signal_clock_phase_noise(t_ieee,499.2e6*16, pn_freq, pn_dbc);
+pulse_rf_ieee     = pulse_ieee.*real(carrier_ieee);
+pulse_rf_hydrogen = pulse_hydrogen.*real(carrier_hydrogen);
 figure(2);
 periodogram(carrier_hydrogen,[],[],fs,'onesided');
 
@@ -154,15 +159,33 @@ antenna_array_rx(2).position = [-0.5*array_spacing, 0.0, -1.5*array_spacing];
 antenna_array_rx(3).position = [ 0.5*array_spacing, 0.0, -1.5*array_spacing];
 antenna_array_rx(4).position = [ 1.5*array_spacing, 0.0, -0.5*array_spacing];
 
+n_tx = 4;
+n_rx = 4;
 
 %-------------------------------------------
 % Single Target
-Target_position = [-0.2,0,3];
+Target_position = [-0.2,0,12];
 Target_RCS = 1;
+simulate_hydrogen = 1;
+simulate_ieee     = 0;
 % Select Hydrogen source
-pulse_rf = pulse_rf_hydrogen;
-t_rf     = t_hydrogen;
+if simulate_hydrogen == 1
+  pulse_rf = pulse_rf_hydrogen;
+  t_rf     = t_hydrogen;
+  carrier  = carrier_hydrogen;
+  ref_bb   = pulse_hydrogen;
+endif;
 
+% Select IEEE source
+if simulate_ieee == 1
+  pulse_rf = pulse_rf_ieee;
+  t_rf     = t_ieee;
+  carrier  = carrier_hydrogen;
+  ref_bb   = pulse_ieee
+endif;
+%-------------------------------------------
+% Calculate kernel for generated pulse
+kernel = signal_build_correlation_kernel(ref_bb, t_rf, fadc);
 %-------------------------------------------
 % Check one single Tx antenna
 AntTx = antenna_array_tx(1);
@@ -170,7 +193,7 @@ AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
 et_f  = AntTx.td_et;
 freqs = AntTx.td_freqs;
 
-et_s = AntTx.et(10,10,:);
+et_s = squeeze(AntTx.et(10,10,:));
 freq_s=AntTx.freq;
 
 figure(4);
@@ -219,12 +242,17 @@ printf("Simulated   Link Loss : \t %3.4g dB \n", simulated_link_loss);
 printf("Theoretical Link Loss : \t %3.4g dB \n", theoretical_link_loss);
 
 %-------------------------------------------
+% 7 bits ADC
+levels = [-1:2/128:1-2/128];
+
+%-------------------------------------------
 % Expand the single antenna example to the MIMO
 % domain
 
 % Build cell array
 Array = cell(n_tx,n_rx);
-
+RxRf  = cell(n_tx,n_rx);
+t_adc = [];
 for t = 1:n_tx
   AntTx = antenna_array_tx(t);
   AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
@@ -234,12 +262,28 @@ for t = 1:n_tx
     AntRx.td_tx_et = AntTx.td_tx_et;
     AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
     % Down-convert. Here we have a radar so we use the same carrier
+    RxRf{t,r}   = real(AntRx.td_rx);
+    Array{t,r} = signal_downconvert(real(AntRx.td_rx), carrier, fs, 2e9);
+    % Rescale the signal (basically ideal VGA)
+    %------------------------------------
+    r_array = real(Array{t,r});
+    i_array = imag(Array{t,r});
+    max_r = abs(max(r_array));
+    min_r = abs(min(r_array));
+    % Apply gain so that the data is in the range (-1,1)
 
-    Array{t,r} = signal_downconvert(real(AntRx.td_rx), carrier_hydrogen, fs, 2e9);
+    max_i = abs(max(i_array));
+    min_i = abs(min(i_array));
+    scale_factor = max([max_i,min_i,max_r,min_r]);
+    Array{t,r} = Array{t,r} / scale_factor;
+    Array{t,r} = signal_adcconvert(Array{t,r},t_rf,fadc,levels);
+    Array{t,r} = conv(Array{t,r},kernel,'same');
+    if (isempty(t_adc))
+        t_adc = (min(t_rf):1.0/fadc:max(t_rf));% - (length(kernel)-1) / (2.0*fadc);
+    end
   endfor;
 endfor;
-%-------------------------------------------
-% Calculate kernel for
+
 
 
 %-------------------------------------------
@@ -248,10 +292,11 @@ endfor;
 
 figure;
 
-for t = 1:n_tx
-    for r = 1:n_rx
-        plot(t_rf*1e9, Array{t,r});
+for t = 1:1
+    for r = 1:1
+        plot(t_adc*1e9, imag(Array{t,r}),t_adc*1e9, real(Array{t,r}));
         hold on;
+        plot(t_rf*1e9, RxRf{t,r}/max(abs(RxRf{t,r})));
     endfor;
 endfor;
 xlabel("time (ns)");

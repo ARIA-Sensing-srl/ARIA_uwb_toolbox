@@ -156,11 +156,12 @@ Create a sin signal with given PN spectral mask\n\
         phase_error_f(f) = std::conj(phase_error_f(fi));
 
     ComplexNDArray phase_error_t = phase_error_f.ifourier();
-    NDArray out_clock(time.dims());
+	ComplexNDArray out_clock(time.dims());
     for (int t=0; t < n_samples; t++)
     {
         double cf = center_freq.numel()==1?center_freq(0) : center_freq(t);
-        out_clock(t) = cos(M_2PI * cf * time(t) + std::real(phase_error_t(t)));
+		out_clock(t) = Complex(cos(2.0 * M_PI * cf * time(t) + std::real(phase_error_t(t))),
+							   sin(2.0 * M_PI * cf * time(t) + std::real(phase_error_t(t))));
     }
 
     return octave_value(out_clock);
