@@ -85,25 +85,25 @@ prt       = 1/prf;
 
 %----------------------------------
 % LT103xxx
-[pulse_lt103,t103] = signal_uwb_pulse("lt103", 5e-9, tmax, ts, 1, prt );
+[pulse_lt103,t103,offset_lt103] = signal_uwb_pulse("lt103", 5e-9, tmax, ts, 1, prt );
   % Normalize
   pulse_lt103 = 0.4*pulse_lt103 / max(abs(hilbert(pulse_lt103)));
 %----------------------------------
 % LT102
-[pulse_lt102,t102] = signal_uwb_pulse("lt102", 5e-9, tmax, ts, 1, prt );
+[pulse_lt102,t102,offset_lt102] = signal_uwb_pulse("lt102", 5e-9, tmax, ts, 1, prt );
   % Normalize
   pulse_lt102 = 0.5*pulse_lt102 / max(abs(hilbert(pulse_lt102)));
 %----------------------------------
 % IEEE802.15.4z
-code = [1 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
-[pulse_ieee,t_ieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
+code = [1 1 -1 1];
+[pulse_ieee,t_ieee,offset_ieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
   % Normalize
   pulse_ieee = 0.5*pulse_ieee / max(abs(hilbert(pulse_ieee)));
 
 %----------------------------------
 % Hydrogen
 
-[pulse_hydrogen,t_hydrogen] = signal_uwb_pulse("hydrogen", 1.0/bw, tmax, ts, code, 1.0/bw);
+[pulse_hydrogen,t_hydrogen,offset_hydrogen] = signal_uwb_pulse("hydrogen", 1.0/bw, tmax, ts, code, 1.0/bw);
 % Normalize
   pulse_hydrogen = 0.25*pulse_hydrogen / max(abs(hilbert(pulse_hydrogen)));
 
@@ -174,6 +174,7 @@ if simulate_hydrogen == 1
   t_rf     = t_hydrogen;
   carrier  = carrier_hydrogen;
   ref_bb   = pulse_hydrogen;
+  offset   = offset_hydrogen;
 endif;
 
 % Select IEEE source
@@ -181,11 +182,16 @@ if simulate_ieee == 1
   pulse_rf = pulse_rf_ieee;
   t_rf     = t_ieee;
   carrier  = carrier_hydrogen;
-  ref_bb   = pulse_ieee
+  ref_bb   = pulse_ieee;
+  offset   = offset_ieee;
 endif;
 %-------------------------------------------
 % Calculate kernel for generated pulse
 kernel = signal_build_correlation_kernel(ref_bb, t_rf, fadc);
+
+auto_corr = conv(kernel,kernel(end:-1:1),'same');
+[~,conv_delay] = max(auto_corr);
+conv_delay = (conv_delay-2) / fadc;
 %-------------------------------------------
 % Check one single Tx antenna
 AntTx = antenna_array_tx(1);
@@ -245,6 +251,9 @@ printf("Theoretical Link Loss : \t %3.4g dB \n", theoretical_link_loss);
 % 7 bits ADC
 levels = [-1:2/128:1-2/128];
 
+%--------------------------------------------
+% Adding noise
+
 %-------------------------------------------
 % Expand the single antenna example to the MIMO
 % domain
@@ -279,7 +288,7 @@ for t = 1:n_tx
     Array{t,r} = signal_adcconvert(Array{t,r},t_rf,fadc,levels);
     Array{t,r} = conv(Array{t,r},kernel,'same');
     if (isempty(t_adc))
-        t_adc = (min(t_rf):1.0/fadc:max(t_rf));% - (length(kernel)-1) / (2.0*fadc);
+        t_adc = (min(t_rf):1.0/fadc:max(t_rf)) - conv_delay - offset;
     end
   endfor;
 endfor;
@@ -292,11 +301,11 @@ endfor;
 
 figure;
 
-for t = 1:1
-    for r = 1:1
+for t = 1:n_tx
+    for r = 1:n_rx
         plot(t_adc*1e9, imag(Array{t,r}),t_adc*1e9, real(Array{t,r}));
         hold on;
-        plot(t_rf*1e9, RxRf{t,r}/max(abs(RxRf{t,r})));
+        %plot(t_rf*1e9, RxRf{t,r}/max(abs(RxRf{t,r})));
     endfor;
 endfor;
 xlabel("time (ns)");
