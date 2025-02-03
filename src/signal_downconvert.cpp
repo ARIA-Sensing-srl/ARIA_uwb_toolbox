@@ -148,7 +148,6 @@ Down-convert the input signal with a given RF signal \n\
 		return octave_value();
 	}
 
-
 	ComplexNDArray data_out;
 	data_out.resize(dim_vector({nsignals,npts}));
 
@@ -189,11 +188,17 @@ Down-convert the input signal with a given RF signal \n\
 					double din = rf_in(s,t);
 					if (bComplexIn)
 					{
-						data_out(s,t) = Complex(dc_signal_real(s,t),dc_signal_imag(s,t))*din;
+						if (dc_signal_real.dim1()==nsignals)
+							data_out(s,t) = Complex(dc_signal_real(s,t),dc_signal_imag(s,t))*din;
+						else
+							data_out(s,t) = Complex(dc_signal_real(t),dc_signal_imag(t))*din;
 					}
 					else
 					{
-						data_out(s,t) = Complex(dc_signal_real(s,t),0.0)*din;
+						if (dc_signal_real.dim1()==nsignals)
+							data_out(s,t) = Complex(dc_signal_real(s,t),0.0)*din;
+						else
+							data_out(s,t) = Complex(dc_signal_real(t),0.0)*din;
 					}
 				}
 		}
@@ -216,7 +221,7 @@ Down-convert the input signal with a given RF signal \n\
 
 	// Low-pass filter
 	double df = fs / (double)(npts);
-	ComplexNDArray fft=	bRFMatrix ? data_out.fourier(2) : data_out.fourier();
+	ComplexNDArray fft=	bRFMatrix ? data_out.fourier(1) : data_out.fourier();
 
 	double f_upper = fmax;
 	double f_lower = fs - fmax;
@@ -243,7 +248,7 @@ Down-convert the input signal with a given RF signal \n\
 	}
 
 	if (bRFMatrix)	{
-		data_out = fft.ifourier(2);
+		data_out = fft.ifourier(1);
 	}
 	else {
 		data_out = fft.ifourier();

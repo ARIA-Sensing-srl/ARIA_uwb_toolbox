@@ -17,10 +17,10 @@
   rebuild_antenna_calc_signal_rx =                        0 | force_build;
   rebuild_antenna_calc_signal_rx_los =                    0 | force_build;
 
-  rebuild_signal_uwb_pulse =                              1 | force_build;
+  rebuild_signal_uwb_pulse =                              0 | force_build;
   rebuild_signal_clock_phase_noise =                      0 | force_build;
   rebuild_signal_build_correlation_kernel =               0 | force_build;
-  rebuild_signal_downconvert =                            0 | force_build;
+  rebuild_signal_downconvert =                            1 | force_build;
   rebuild_signal_adcconvert =                             0 | force_build;
 
   rebuild_pm_demod =                                      0 | force_build;

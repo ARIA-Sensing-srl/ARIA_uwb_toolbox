@@ -18,7 +18,7 @@ div  = 4;
 mult = 18;
 fc = mult*fadc/div;     % Center frequency
 % Hydrogen
-bw = fadc/3;
+bw = fadc/4;
 
 %-----------------------------------------------
 % Create an omnidirectional antenna
@@ -95,7 +95,7 @@ prt       = 1/prf;
   pulse_lt102 = 0.5*pulse_lt102 / max(abs(hilbert(pulse_lt102)));
 %----------------------------------
 % IEEE802.15.4z
-code = [1 1 -1 1];
+code = [1 1 1 1 1 -1 -1 1 1 -1 1 -1 1];
 [pulse_ieee,t_ieee,offset_ieee] = signal_uwb_pulse("ieee802154z", 5e-9, tmax, ts, code, 1.0/499.2e6 );
   % Normalize
   pulse_ieee = 0.5*pulse_ieee / max(abs(hilbert(pulse_ieee)));
@@ -125,7 +125,7 @@ ylabel("amplitude (V)");
 pn_freq = [1e3 10e3 100e3 1e6 10e6 100e6];
 pn_dbc  = [20 -20   -55   -80 -90  -90];
 
-carrier_hydrogen  = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc+40);
+carrier_hydrogen  = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc+30);
 carrier_ieee      = signal_clock_phase_noise(t_ieee,499.2e6*16, pn_freq, pn_dbc);
 pulse_rf_ieee     = pulse_ieee.*real(carrier_ieee);
 pulse_rf_hydrogen = pulse_hydrogen.*real(carrier_hydrogen);
@@ -164,7 +164,7 @@ n_rx = 4;
 
 %-------------------------------------------
 % Single Target
-Target_position = [-0.2,0,12];
+Target_position = [-0.2,0,9.5];
 Target_RCS = 1;
 simulate_hydrogen = 1;
 simulate_ieee     = 0;
@@ -188,6 +188,7 @@ endif;
 %-------------------------------------------
 % Calculate kernel for generated pulse
 kernel = signal_build_correlation_kernel(ref_bb, t_rf, fadc);
+kernel = kernel./(max(abs(kernel)));
 
 auto_corr = conv(kernel,kernel(end:-1:1),'same');
 [~,conv_delay] = max(auto_corr);
@@ -253,6 +254,11 @@ levels = [-1:2/128:1-2/128];
 
 %--------------------------------------------
 % Adding noise
+nIntegrationGain = 6000;
+kB = 1.380649e-23;
+T  = 85 + 273.15;
+PwrNoise = kB * T * fs * 100;
+
 
 %-------------------------------------------
 % Expand the single antenna example to the MIMO
@@ -266,26 +272,37 @@ for t = 1:n_tx
   AntTx = antenna_array_tx(t);
   AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
   for r = 1:n_rx
+    noise = randn(nIntegrationGain, length(t_rf))*sqrt(PwrNoise);
+    % Filter
+    [b,a] = butter(2, [min(freqs) max(freqs)] / (fs/2.0));
+    noise_rf = filter(b,a,noise,[],2);
+
     AntRx = antenna_array_rx(r);
     AntRx.td_tx_ep = AntTx.td_tx_ep;
     AntRx.td_tx_et = AntTx.td_tx_et;
     AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
+
+    noisy_rf = repmat(real(AntRx.td_rx),nIntegrationGain,1) + noise_rf;
     % Down-convert. Here we have a radar so we use the same carrier
     RxRf{t,r}   = real(AntRx.td_rx);
-    Array{t,r} = signal_downconvert(real(AntRx.td_rx), carrier, fs, 2e9);
+    Array{t,r} = signal_downconvert(noisy_rf, carrier, fs, 2e9);
     % Rescale the signal (basically ideal VGA)
     %------------------------------------
     r_array = real(Array{t,r});
     i_array = imag(Array{t,r});
-    max_r = abs(max(r_array));
-    min_r = abs(min(r_array));
+    max_r = abs(max(max(r_array)));
+    min_r = abs(min(min(r_array)));
     % Apply gain so that the data is in the range (-1,1)
 
-    max_i = abs(max(i_array));
-    min_i = abs(min(i_array));
+    max_i = abs(max(max(i_array)));
+    min_i = abs(min(min(i_array)));
     scale_factor = max([max_i,min_i,max_r,min_r]);
     Array{t,r} = Array{t,r} / scale_factor;
     Array{t,r} = signal_adcconvert(Array{t,r},t_rf,fadc,levels);
+    x = Array{t,r};
+    Array{t,r} = sum(Array{t,r},1);
+    Array{t,r} = Array{t,r} - mean(Array{t,r});
+    y = Array{t,r};
     Array{t,r} = conv(Array{t,r},kernel,'same');
     if (isempty(t_adc))
         t_adc = (min(t_rf):1.0/fadc:max(t_rf)) - conv_delay - offset;

@@ -248,9 +248,8 @@ NB The output vector is padded with a @var{tp}-long set of zeros\n\
 
     double t=-tp;
 
-    for (int ti=0; ti < ntime_samples; ti++, t+=ts)
+	for (int ti=0; ti < ntime_samples; ti++, t+=ts)
         time_support(ti) = t;
-
 
     // LT102 and LT103 do not allow for pulse coding
     if ((pulse_shape == "lt102")||(pulse_shape == "lt103"))
