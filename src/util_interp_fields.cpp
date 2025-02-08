@@ -66,16 +66,16 @@ octave_value interp_field(const octave_value& field_in,
     // Reapply the original delay
     delay = -delay;
     nf = fend.numel();
-
+	NDArray fend_a = fend.array_value();
     for (int f=0; f < nf; f++)
     {
-        double current_freq = fend.array_value()(f);
+		double current_freq = fend_a.xelem(f);
         std::complex ref_comp = std::exp(std::complex(0.0, M_2PI * current_freq * delay));
 
         for (int a = 0; a < naz; a++)
             for (int z =0; z < nzen; z++)
             {
-                field_out(a,z,f)*=ref_comp;
+				field_out.xelem(a,z,f)*=ref_comp;
             }
     }
 
@@ -107,13 +107,13 @@ octave_value interp_field(const octave_value& field_in, const octave_value& fsta
     // Compensate for initial delay (e.g. emPRO)
     for (int f=0; f < nf; f++)
     {
-        double current_freq = freq(f);
+		double current_freq = freq.xelem(f);
         std::complex ref_comp = std::exp(std::complex(0.0, M_2PI * current_freq * delay));
 
         for (int a = 0; a < naz; a++)
             for (int z =0; z < nzen; z++)
             {
-                fcomplex(a,z,f)*=ref_comp;
+				fcomplex.xelem(a,z,f)*=ref_comp;
             }
     }
 
@@ -121,16 +121,16 @@ octave_value interp_field(const octave_value& field_in, const octave_value& fsta
     // Reapply the original delay
     delay = -delay;
     nf = fend.numel();
-
+	NDArray fend_a = fend.array_value();
     for (int f=0; f < nf; f++)
     {
-        double current_freq = fend.array_value()(f);
+		double current_freq = fend_a.xelem(f);
         std::complex ref_comp = std::exp(std::complex(0.0, M_2PI * current_freq * delay));
 
         for (int a = 0; a < naz; a++)
             for (int z =0; z < nzen; z++)
             {
-                field_out(a,z,f)*=ref_comp;
+				field_out.xelem(a,z,f)*=ref_comp;
             }
     }
 

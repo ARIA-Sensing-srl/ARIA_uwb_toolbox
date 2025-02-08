@@ -75,7 +75,7 @@ octave_value directivity(const octave_value_list& args)
 		for (int a=0; a < naz; a++)
 			for (int z=0; z < nzen; z++ )
 			{
-				pwr += da*dz*fabs(sin(zen(z)+dz/2))*(std::norm(ep(a,z,f)) + std::norm(et(a,z,f)))*ONE_OVER_ETA0;
+				pwr += da*dz*fabs(sin(zen.xelem(z)+dz/2))*(std::norm(ep.xelem(a,z,f)) + std::norm(et.xelem(a,z,f)))*ONE_OVER_ETA0;
 			}
 		pwr = pwr / (4.0*M_PI);
 		double one_over_pwr = 1.0/pwr;
@@ -86,15 +86,15 @@ octave_value directivity(const octave_value_list& args)
 		for (int a=0; a < naz; a++)
 			for (int z=0; z < nzen; z++ )
 			{
-				std::complex<double> ep_azf = ep(a,z,f);
-				std::complex<double> et_azf = et(a,z,f);
+				std::complex<double> ep_azf = ep.xelem(a,z,f);
+				std::complex<double> et_azf = et.xelem(a,z,f);
 				//double area = da*dz*fabs(sin(zen(z)+dz/2));
 				//double area_sq = sqrt(area);
-				dp(a,z,f) = ep_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
-				dt(a,z,f) = et_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
-				aeff_p(a,z,f) = dp(a,z,f) * d_to_ae;
-				aeff_t(a,z,f) = dt(a,z,f) * d_to_ae;
-				dir_abs(a,z,f) = ( (std::norm(ep_azf) + std::norm(et_azf))*one_over_pwr*ONE_OVER_ETA0);
+				dp.xelem(a,z,f) = ep_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
+				dt.xelem(a,z,f) = et_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
+				aeff_p.xelem(a,z,f) = dp.xelem(a,z,f) * d_to_ae;
+				aeff_t.xelem(a,z,f) = dt.xelem(a,z,f) * d_to_ae;
+				dir_abs.xelem(a,z,f) = ( (std::norm(ep_azf) + std::norm(et_azf))*one_over_pwr*ONE_OVER_ETA0);
 			}
 	}
 

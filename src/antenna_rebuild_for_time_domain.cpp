@@ -188,12 +188,12 @@ Resample the antenna to be compliant with a time-domain signal\n\
     // Fill with prev data
     for (int fs=0,f = extra_freqs_low; fs < nf_start; fs++, f++)
     {
-        freq_start(f) = freq_ant(fs);
+		freq_start.xelem(f) = freq_ant.xelem(fs);
         for (int a =0; a < naz; a++)
             for (int z=0; z < nzen; z++)
             {
-                ep_start(a,z,f) = ep_ant(a,z,fs);
-                et_start(a,z,f) = et_ant(a,z,fs);
+				ep_start.xelem(a,z,f) = ep_ant.xelem(a,z,fs);
+				et_start.xelem(a,z,f) = et_ant.xelem(a,z,fs);
             }
     }
 

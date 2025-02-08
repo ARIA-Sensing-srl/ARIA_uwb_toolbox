@@ -18,7 +18,7 @@ div  = 4;
 mult = 18;
 fc = mult*fadc/div;     % Center frequency
 % Hydrogen
-bw = fadc/4;
+bw = fadc/3;
 
 %-----------------------------------------------
 % Create an omnidirectional antenna
@@ -126,7 +126,8 @@ pn_freq = [1e3 10e3 100e3 1e6 10e6 100e6];
 pn_dbc  = [20 -20   -55   -80 -90  -90];
 
 carrier_hydrogen  = signal_clock_phase_noise(t_hydrogen,fc, pn_freq, pn_dbc+30);
-carrier_ieee      = signal_clock_phase_noise(t_ieee,499.2e6*16, pn_freq, pn_dbc);
+fc_ieee = 499.2e6*16;
+carrier_ieee      = signal_clock_phase_noise(t_ieee,fc_ieee, pn_freq, pn_dbc);
 pulse_rf_ieee     = pulse_ieee.*real(carrier_ieee);
 pulse_rf_hydrogen = pulse_hydrogen.*real(carrier_hydrogen);
 figure(2);
@@ -164,7 +165,7 @@ n_rx = 4;
 
 %-------------------------------------------
 % Single Target
-Target_position = [-0.2,0,9.5];
+Target_position = [0,0,5];
 Target_RCS = 1;
 simulate_hydrogen = 1;
 simulate_ieee     = 0;
@@ -181,9 +182,10 @@ endif;
 if simulate_ieee == 1
   pulse_rf = pulse_rf_ieee;
   t_rf     = t_ieee;
-  carrier  = carrier_hydrogen;
+  carrier  = carrier_ieee;
   ref_bb   = pulse_ieee;
   offset   = offset_ieee;
+  fc       = fc_ieee;
 endif;
 %-------------------------------------------
 % Calculate kernel for generated pulse
@@ -254,42 +256,53 @@ levels = [-1:2/128:1-2/128];
 
 %--------------------------------------------
 % Adding noise
-nIntegrationGain = 6000;
+nIntegrationGain = 5000;
 kB = 1.380649e-23;
 T  = 85 + 273.15;
 PwrNoise = kB * T * fs * 100;
-
+addNoise = 0;
+if addNoise == 0
+    nIntegrationGain = 1;
+endif;
 
 %-------------------------------------------
 % Expand the single antenna example to the MIMO
 % domain
 
 % Build cell array
-Array = cell(n_tx,n_rx);
-RxRf  = cell(n_tx,n_rx);
 t_adc = [];
+
 for t = 1:n_tx
   AntTx = antenna_array_tx(t);
   AntTx = antenna_calc_signal_tx(AntTx, Target_position, pulse_rf, ts);
+  printf("Doing Tx \t %d \n",t);
   for r = 1:n_rx
-    noise = randn(nIntegrationGain, length(t_rf))*sqrt(PwrNoise);
-    % Filter
-    [b,a] = butter(2, [min(freqs) max(freqs)] / (fs/2.0));
-    noise_rf = filter(b,a,noise,[],2);
+     printf("..... doing Rx \t %d \n",r);
+     if addNoise == 1
+        noise = randn(nIntegrationGain, length(t_rf))*sqrt(PwrNoise);
+    % Add only in-band noise
+        [b,a] = butter(2, [min(freqs) max(freqs)] / (fs/2.0));
+        noise_rf = filter(b,a,noise,[],2);
+    endif;
+
 
     AntRx = antenna_array_rx(r);
     AntRx.td_tx_ep = AntTx.td_tx_ep;
     AntRx.td_tx_et = AntTx.td_tx_et;
     AntRx = antenna_calc_signal_rx(AntRx, Target_position, ts, DoNoise, Target_RCS);
 
-    noisy_rf = repmat(real(AntRx.td_rx),nIntegrationGain,1) + noise_rf;
-    % Down-convert. Here we have a radar so we use the same carrier
-    RxRf{t,r}   = real(AntRx.td_rx);
-    Array{t,r} = signal_downconvert(noisy_rf, carrier, fs, 2e9);
+    if addNoise == 1
+      noisy_rf = repmat(real(AntRx.td_rx),nIntegrationGain,1) + noise_rf;
+      % Down-convert. Here we have a radar so we use the same carrier
+      bb_out = signal_downconvert(noisy_rf, carrier, fs, 2e9);
+    else
+      bb_out = signal_downconvert(real(AntRx.td_rx), carrier, fs, 2e9);
+    endif;
+
     % Rescale the signal (basically ideal VGA)
     %------------------------------------
-    r_array = real(Array{t,r});
-    i_array = imag(Array{t,r});
+    r_array = real(bb_out);
+    i_array = imag(bb_out);
     max_r = abs(max(max(r_array)));
     min_r = abs(min(min(r_array)));
     % Apply gain so that the data is in the range (-1,1)
@@ -297,19 +310,20 @@ for t = 1:n_tx
     max_i = abs(max(max(i_array)));
     min_i = abs(min(min(i_array)));
     scale_factor = max([max_i,min_i,max_r,min_r]);
-    Array{t,r} = Array{t,r} / scale_factor;
-    Array{t,r} = signal_adcconvert(Array{t,r},t_rf,fadc,levels);
-    x = Array{t,r};
-    Array{t,r} = sum(Array{t,r},1);
-    Array{t,r} = Array{t,r} - mean(Array{t,r});
-    y = Array{t,r};
-    Array{t,r} = conv(Array{t,r},kernel,'same');
+    bb_out = bb_out / scale_factor;
+    adc_out = signal_adcconvert(bb_out,t_rf,fadc,levels);
+
+    adc_out = sum(adc_out,1);
+    adc_out = adc_out - mean(adc_out);
+    adc_out = conv(adc_out,kernel,'same');
     if (isempty(t_adc))
         t_adc = (min(t_rf):1.0/fadc:max(t_rf)) - conv_delay - offset;
+        bb_data = zeros(length(t_adc),n_tx,n_rx);
     end
+
+    bb_data(:,t,r) = adc_out;
   endfor;
 endfor;
-
 
 
 %-------------------------------------------
@@ -320,7 +334,8 @@ figure;
 
 for t = 1:n_tx
     for r = 1:n_rx
-        plot(t_adc*1e9, imag(Array{t,r}),t_adc*1e9, real(Array{t,r}));
+        plot(t_adc*1e9, imag(squeeze(bb_data(:,t,r))),...
+             t_adc*1e9, real(squeeze(bb_data(:,t,r))));
         hold on;
         %plot(t_rf*1e9, RxRf{t,r}/max(abs(RxRf{t,r})));
     endfor;
@@ -331,8 +346,35 @@ title("Array Received signals");
 grid on;
 
 hold off;
+%-------------------------------------------
+% Build the delay map
+x= -5:0.05:5;
+y = 0;
+z = 0:0.05:10;
 
+tx_pos_array = [ antenna_array_tx(1).position;...
+                 antenna_array_tx(2).position;...
+                 antenna_array_tx(3).position;...
+                 antenna_array_tx(4).position];
 
+rx_pos_array = [ antenna_array_rx(1).position;...
+                 antenna_array_rx(2).position;...
+                 antenna_array_rx(3).position;...
+                 antenna_array_rx(4).position];
+
+[delay_map,phase_fact] = build_delay_map(x,y,z,fc, tx_pos_array,rx_pos_array);
+% Build 2D LPF
+filtimg = fspecial("gaussian",15,10);
+
+% Build DAS map
+das = imfilter(abs(squeeze(signal_das(bb_data,t_adc,delay_map, phase_fact))),filtimg);
+figure;
+mesh(squeeze(das));
+
+% Build DMAS map
+fdmas = imfilter(abs(squeeze(signal_fdmas(bb_data,t_adc,delay_map, phase_fact))),filtimg);
+figure;
+mesh(squeeze(fdmas));
 
 
 

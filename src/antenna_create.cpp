@@ -122,8 +122,8 @@ freqs is the array of frequencies \n\
             for (int a=0; a < naz; a++)
             {
                 // Power is equally split and we enforce only et
-                ep(a,z,f) = ep_f;
-                et(a,z,f) = et_f;
+				ep.xelem(a,z,f) = ep_f;
+				et.xelem(a,z,f) = et_f;
                 total_power += dArea * ONE_OVER_ETA0;
             }
         }
@@ -131,8 +131,8 @@ freqs is the array of frequencies \n\
         for (int a=0; a < naz; a++)
             for (int z=0; z < nzen; z++)
             {
-                ep(a,z,f) *= normaliz_factor;
-                et(a,z,f) *= normaliz_factor;
+				ep.xelem(a,z,f) *= normaliz_factor;
+				et.xelem(a,z,f) *= normaliz_factor;
             }
     }
 

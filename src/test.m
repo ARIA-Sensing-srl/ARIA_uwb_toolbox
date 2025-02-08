@@ -20,12 +20,13 @@
   rebuild_signal_uwb_pulse =                              0 | force_build;
   rebuild_signal_clock_phase_noise =                      0 | force_build;
   rebuild_signal_build_correlation_kernel =               0 | force_build;
-  rebuild_signal_downconvert =                            1 | force_build;
+  rebuild_signal_downconvert =                            0 | force_build;
   rebuild_signal_adcconvert =                             0 | force_build;
 
   rebuild_pm_demod =                                      0 | force_build;
-
-
+  rebuild_delay_map=                                      0 | force_build;
+  rebuild_signal_das=                                     0 | force_build;
+  rebuild_signal_fdmas=                                   1 | force_build;
 if exclude_build==0
 
   if rebuild_antenna_create==1
@@ -66,7 +67,7 @@ if exclude_build==0
   if rebuild_antenna_rebuild_for_time_domain == 1
       clear antenna_rebuild_for_time_domain
       printf("Making antenna_rebuild_for_time_domain...\n");
-      mkoctfile antenna_rebuild_for_time_domain.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp antenna_rebuild_for_time_domain.cpp
+      mkoctfile antenna_rebuild_for_time_domain.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
       printf("Done \n");
   endif
 
@@ -140,6 +141,28 @@ if exclude_build==0
     mkoctfile signal_adcconvert.cpp uwb_toolbox_utils.cpp
     printf("Done \n");
   endif;
+
+   if rebuild_delay_map==1
+    clear build_delay_map
+    printf("Making Delay Map...\n");
+    mkoctfile build_delay_map.cpp uwb_toolbox_utils.cpp
+    printf("Done \n");
+  endif;
+
+   if rebuild_signal_das==1
+    clear signal_das
+    printf("Making Delay-and-Sum...\n");
+    mkoctfile signal_das.cpp uwb_toolbox_utils.cpp
+    printf("Done \n");
+  endif;
+
+  if rebuild_signal_fdmas==1
+    clear signal_fdmas
+    printf("Making Delay-Multiply-and-Sum...\n");
+    mkoctfile signal_fdmas.cpp uwb_toolbox_utils.cpp
+    printf("Done \n");
+  endif;
+
 endif
 
 

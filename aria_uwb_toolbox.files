@@ -18,12 +18,16 @@ src/antenna_rebuild_for_time_domain_single_angle.cpp
 src/aria_rdk_interface_message.cpp
 src/aria_rdk_interface_messages.h
 src/aria_uwb_toolbox.h
+src/build_delay_map.cpp
 src/das.cpp
 src/directivity.cpp
 src/pm_demod.cpp
+src/signal_adcconvert.cpp
 src/signal_build_correlation_kernel.cpp
 src/signal_clock_phase_noise.cpp
+src/signal_das.cpp
 src/signal_downconvert.cpp
+src/signal_fdmas.cpp
 src/signal_uwb_pulse.cpp
 src/tof.cpp
 src/util_interp_fields.cpp

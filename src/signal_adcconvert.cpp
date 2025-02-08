@@ -167,7 +167,7 @@ Down-convert the input signal with a given RF signal \n\
 		int    ns	 = ceil((time_support.max()(0) - time_support.min()(0))/ts);
 		sampled_time.resize(dim_vector({1,ns}));
 		for (int i=0; i < ns; i++, t+=ts)
-			sampled_time(i) = t;
+			sampled_time.xelem(i) = t;
 
 	}
 	else
@@ -191,10 +191,10 @@ Down-convert the input signal with a given RF signal \n\
 		int nck = 0;
 		for (int i=0; i < ns ; i++)
 		{
-			double y0 = ck(i), y1 = ck(i+1);
+			double y0 = ck.xelem(i), y1 = ck.xelem(i+1);
 			double t0 = time_support(i), t1 = time_support(i+1);
 			if ((y0 < th)&&(y1 > th))
-				sampled_time(nck++) = t0 + (t1-t0)*(th-y0)/(y1-y0);
+				sampled_time.xelem(nck++) = t0 + (t1-t0)*(th-y0)/(y1-y0);
 		}
 	}
 
@@ -230,9 +230,9 @@ Down-convert the input signal with a given RF signal \n\
 			for (int s=0; s < nsignals; s++)
 				for (int t=0; t < npts; t++)
 				{
-					std::complex<double> in = sampled_values(s,t);
-					sampled_values(s,t).real(quantize(in.real(),levels));
-					sampled_values(s,t).imag(quantize(in.imag(),levels));
+					std::complex<double> in = sampled_values.xelem(s,t);
+					sampled_values.xelem(s,t).real(quantize(in.real(),levels));
+					sampled_values.xelem(s,t).imag(quantize(in.imag(),levels));
 				}
 			out = sampled_values;
 		}
@@ -242,8 +242,8 @@ Down-convert the input signal with a given RF signal \n\
 			for (int s=0; s < nsignals; s++)
 				for (int t=0; t < npts; t++)
 				{
-					double in = sampled_values(t);
-					sampled_values(t)= (quantize(in,levels));
+					double in = sampled_values.xelem(t);
+					sampled_values.xelem(t)= (quantize(in,levels));
 				}
 			out = sampled_values;
 		}

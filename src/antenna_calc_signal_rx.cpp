@@ -359,12 +359,12 @@ Calculate the signal received from a receiving antenna in Tx->Target->Rx mode \n
             {
                 // Extract the start data
                 for (int f=0; f < n_freq_rcs; f++)
-                    start_data(f) = rcs(p,t,f);
+					start_data.xelem(f) = rcs.xelem(p,t,f);
 
                 ComplexNDArray out = octave::feval("interp1", octave_value_list({rcs_freqs, start_data, freqs_fft,"linear",0}))(0).complex_array_value();
 
                 for (int f=0; f < n_freq_of_interest; f++)
-                    rcs_out(p,t,f) = out(f);
+					rcs_out.xelem(p,t,f) = out.xelem(f);
             }
 
         rcs = rcs_out;
@@ -413,25 +413,25 @@ Calculate the signal received from a receiving antenna in Tx->Target->Rx mode \n
     {
         if (rcs_type==RCS_NUMBER)
         {
-            out_fft(f) = (in_fft_ep(f) * aeffp_i(f) + in_fft_et(f) * aefft_i(f)) * comp_delay * rcs_number;
+			out_fft.xelem(f) = (in_fft_ep.xelem(f) * aeffp_i.xelem(f) + in_fft_et.xelem(f) * aefft_i.xelem(f)) * comp_delay * rcs_number;
         }
         if (rcs_type==RCS_MATRIX)
         {
-            out_fft(f) = ( (in_fft_ep(f) * rcs_number_pp + in_fft_et(f) * rcs_number_pt) * aeffp_i(f) +
-                           (in_fft_ep(f) * rcs_number_tp + in_fft_et(f) * rcs_number_tt) * aefft_i(f)) * comp_delay;
+			out_fft.xelem(f) = ( (in_fft_ep.xelem(f) * rcs_number_pp + in_fft_et.xelem(f) * rcs_number_pt) * aeffp_i.xelem(f) +
+								 (in_fft_ep.xelem(f) * rcs_number_tp + in_fft_et.xelem(f) * rcs_number_tt) * aefft_i.xelem(f)) * comp_delay;
         }
 
         if (rcs_type == RCS_NUMBER_FREQ)
-            out_fft(f) = (in_fft_ep(f) * aeffp_i(f) + in_fft_et(f) * aefft_i(f)) * comp_delay * rcs(f);
+			out_fft.xelem(f) = (in_fft_ep.xelem(f) * aeffp_i.xelem(f) + in_fft_et.xelem(f) * aefft_i.xelem(f)) * comp_delay * rcs.xelem(f);
 
         if (rcs_type == RCS_MATRIX_FREQ)
         {
-            out_fft(f) = ( (in_fft_ep(f) * rcs(0,0,f)    + in_fft_et(f) * rcs(0,1,f)) * aeffp_i(f) +
-                           (in_fft_ep(f) * rcs(1,0,f)    + in_fft_et(f) * rcs(1,1,f)) * aefft_i(f)) * comp_delay;
+			out_fft(f) = ( (in_fft_ep.xelem(f) * rcs.xelem(0,0,f)    + in_fft_et.xelem(f) * rcs.xelem(0,1,f)) * aeffp_i.xelem(f) +
+						   (in_fft_ep.xelem(f) * rcs.xelem(1,0,f)    + in_fft_et.xelem(f) * rcs.xelem(1,1,f)) * aefft_i.xelem(f)) * comp_delay;
         }
         if (do_noise)
         {
-            out_fft(f) = out_fft(f)+(noise_f(f) * dir(f));
+			out_fft.xelem(f) = out_fft.xelem(f)+(noise_f.xelem(f) * dir.xelem(f));
         }
 
         comp_delay *= dexp;
@@ -442,7 +442,7 @@ Calculate the signal received from a receiving antenna in Tx->Target->Rx mode \n
 
     for (int f=n_freq_of_interest; f < n_samples; f++, nstart--)
     {
-        out_fft(f) = std::conj(out_fft(nstart));
+		out_fft.xelem(f) = std::conj(out_fft.xelem(nstart));
     }
 
     ant.assign("td_rx",octave_value(out_fft.ifourier()));

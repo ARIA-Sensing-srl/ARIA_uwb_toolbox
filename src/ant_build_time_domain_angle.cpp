@@ -186,14 +186,14 @@ octave_value ant_build_time_domain_angle(const octave_value& antenna, double tma
 
 	for (int fs=0,f = extra_freqs_low; fs < nf_start; fs++, f++)
 	{
-		double curr_freq= freq_ant(fs);
-		freq_start(f)   = curr_freq;
+		double curr_freq= freq_ant.xelem(fs);
+		freq_start.xelem(f)   = curr_freq;
 		std::complex<double> comp_delay = loss_factor*std::exp(std::complex(0.0, 2.0 * M_PI * curr_freq * delay));
-		ep_start(f)     = ep_ant(fs) * comp_delay;
-		et_start(f)     = et_ant(fs) * comp_delay;
-		aeffp_start(f)  = aeffp_ant(fs) * comp_delay;
-		aefft_start(f)  = aefft_ant(fs) * comp_delay;
-		dir_start(f)    = dir_ant(fs);
+		ep_start.xelem(f)     = ep_ant.xelem(fs) * comp_delay;
+		et_start.xelem(f)     = et_ant.xelem(fs) * comp_delay;
+		aeffp_start.xelem(f)  = aeffp_ant.xelem(fs) * comp_delay;
+		aefft_start.xelem(f)  = aefft_ant.xelem(fs) * comp_delay;
+		dir_start.xelem(f)    = dir_ant.xelem(fs);
 	}
 
 	// Now we just need to interpolate over desired freq range
@@ -207,10 +207,10 @@ octave_value ant_build_time_domain_angle(const octave_value& antenna, double tma
 	std::complex<double> dexp       = std::exp(std::complex(0.0, -2.0* M_PI * df * delay));
 	for (int fi = 0; fi < n_foi; fi++)
 	{
-		epi(fi)*=comp_delay;
-		eti(fi)*=comp_delay;
-		aepi(fi)*=comp_delay;
-		aeti(fi)*=comp_delay;
+		epi.xelem(fi)*=comp_delay;
+		eti.xelem(fi)*=comp_delay;
+		aepi.xelem(fi)*=comp_delay;
+		aeti.xelem(fi)*=comp_delay;
 		comp_delay *= dexp;
 	}
 

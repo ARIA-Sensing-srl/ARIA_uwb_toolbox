@@ -75,8 +75,8 @@ along the two components (Phi/Theta) \n\
 
     for (int f = 0; f < nf-1; f++)
     {
-        double freq1 = freq(f+1);
-        double freq0 = freq(f);
+		double freq1 = freq.xelem(f+1);
+		double freq0 = freq.xelem(f);
         double df = freq1-freq0;
 		double d_omega = 2.0*M_PI*(df);
 		std::complex<double> reference_comp = std::exp(std::complex<double>(0.0, d_omega * delay));
@@ -84,20 +84,20 @@ along the two components (Phi/Theta) \n\
         for (int a = 0; a < naz; a++)
             for (int z = 0; z < nzen; z++)
             {
-				std::complex<double> ep1 = ep(a,z,f+1);
-				std::complex<double> ep0 = ep(a,z,f);
+				std::complex<double> ep1 = ep.xelem(a,z,f+1);
+				std::complex<double> ep0 = ep.xelem(a,z,f);
 
 
 				double d_phase_p = unwrap(std::arg(reference_comp*ep1*std::conj(ep0)));
 				double dpp_dw     = d_phase_p/d_omega;
-				gd_p(a,z,f) = fixed_delay + delay + dpp_dw;
+				gd_p.xelem(a,z,f) = fixed_delay + delay + dpp_dw;
 
 				std::complex<double> et1 = et(a,z,f+1);
 				std::complex<double> et0 = et(a,z,f);
 
 				double d_phase_t = unwrap(std::arg(reference_comp*et1*std::conj(et0)));
 				double dpt_dw     = d_phase_t/d_omega;
-				gd_t(a,z,f) = fixed_delay + delay + dpt_dw;
+				gd_t.xelem(a,z,f) = fixed_delay + delay + dpt_dw;
 
             }
     }

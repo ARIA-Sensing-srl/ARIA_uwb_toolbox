@@ -82,7 +82,7 @@ the computation is performed at the antenna frequencies \n\
                 double k_da_dz = da*dz*fabs(sin(zen(z)+dz/2));
                 for (int a=0; a < naz; a++)
                 {
-                    pwr += k_da_dz* (std::norm(ep(a,z,f)) + std::norm(et(a,z,f)))*ONE_OVER_ETA0;
+					pwr += k_da_dz* (std::norm(ep.xelem(a,z,f)) + std::norm(et.xelem(a,z,f)))*ONE_OVER_ETA0;
                 }
             }
             opwr(f)=pwr;
@@ -107,10 +107,10 @@ the computation is performed at the antenna frequencies \n\
 
             for (int z=0; z < nzen; z++ )
             {
-                double k_da_dz = da*dz*fabs(sin(zen(z)+dz/2));
+				double k_da_dz = da*dz*fabs(sin(zen.xelem(z)+dz/2));
                 for (int a=0; a < naz; a++)
                 {
-                    pwr += k_da_dz* (std::norm(epi(a,z,f)) + std::norm(eti(a,z,f)))*ONE_OVER_ETA0;
+					pwr += k_da_dz* (std::norm(epi.xelem(a,z,f)) + std::norm(eti.xelem(a,z,f)))*ONE_OVER_ETA0;
                 }
             }
 
@@ -159,8 +159,8 @@ the computation is performed at the antenna frequencies \n\
 
         if ((current_freq >= fmin)&&(current_freq <= fmax ))
         {
-            freq_of_interest(fi) = current_freq;
-            fft_of_interest(fi++)= fft_signal(f);
+			freq_of_interest.xelem(fi) = current_freq;
+			fft_of_interest.xelem(fi++)= fft_signal(f);
         }
         if (current_freq > fmax)
             break;
@@ -180,7 +180,7 @@ the computation is performed at the antenna frequencies \n\
             double k_da_dz = da*dz*fabs(sin(zen(z)+dz/2));
             for (int a=0; a < naz; a++)
             {
-                pwr += std::norm(fft_of_interest(f))*k_da_dz*(std::norm(epi(a,z,f)) + std::norm(eti(a,z,f)))*ONE_OVER_ETA0;
+				pwr += std::norm(fft_of_interest.xelem(f))*k_da_dz*(std::norm(epi.xelem(a,z,f)) + std::norm(eti.xelem(a,z,f)))*ONE_OVER_ETA0;
             }
         }
         opwr(f)=pwr;

@@ -163,8 +163,8 @@ Down-convert the input signal with a given RF signal \n\
 				Complex Phase(1.0,0.0);
 				for (octave_idx_type t = 0; t < npts; t++, Phase*=dPhase)
 				{
-					double din = rf_in(s,t);
-					data_out(s,t) = Phase*din;
+					double din = rf_in.xelem(s,t);
+					data_out.xelem(s,t) = Phase*din;
 				}
 			}
 		}
@@ -173,8 +173,8 @@ Down-convert the input signal with a given RF signal \n\
 			Complex Phase(1.0,0.0);
 			for (octave_idx_type t = 0; t < npts; t++, Phase*=dPhase)
 			{
-				double din = rf_in(t);
-				data_out(t) = Phase*din;
+				double din = rf_in.xelem(t);
+				data_out.xelem(t) = Phase*din;
 			}
 		}
 	}
@@ -189,16 +189,16 @@ Down-convert the input signal with a given RF signal \n\
 					if (bComplexIn)
 					{
 						if (dc_signal_real.dim1()==nsignals)
-							data_out(s,t) = Complex(dc_signal_real(s,t),dc_signal_imag(s,t))*din;
+							data_out.xelem(s,t) = Complex(dc_signal_real.xelem(s,t),dc_signal_imag.xelem(s,t))*din;
 						else
-							data_out(s,t) = Complex(dc_signal_real(t),dc_signal_imag(t))*din;
+							data_out.xelem(s,t) = Complex(dc_signal_real.xelem(t),dc_signal_imag.xelem(t))*din;
 					}
 					else
 					{
 						if (dc_signal_real.dim1()==nsignals)
-							data_out(s,t) = Complex(dc_signal_real(s,t),0.0)*din;
+							data_out.xelem(s,t) = Complex(dc_signal_real.xelem(s,t),0.0)*din;
 						else
-							data_out(s,t) = Complex(dc_signal_real(t),0.0)*din;
+							data_out.xelem(s,t) = Complex(dc_signal_real.xelem(t),0.0)*din;
 					}
 				}
 		}
@@ -209,11 +209,11 @@ Down-convert the input signal with a given RF signal \n\
 				double din = rf_in(t);
 				if (bComplexIn)
 				{
-					data_out(t) = Complex(dc_signal_real(t),dc_signal_imag(t))*din;
+					data_out.xelem(t) = Complex(dc_signal_real.xelem(t),dc_signal_imag.xelem(t))*din;
 				}
 				else
 				{
-					data_out(t) = Complex(dc_signal_real(t),0.0)*din;
+					data_out.xelem(t) = Complex(dc_signal_real.xelem(t),0.0)*din;
 				}
 			}
 		}
@@ -233,7 +233,7 @@ Down-convert the input signal with a given RF signal \n\
 			for (int n=0; n < npts; n++, f+=df)
 			{
 				if ((f > f_upper)&&(f<f_lower))
-					fft(s,n) = Complex(0.0,0.0);
+					fft.xelem(s,n) = Complex(0.0,0.0);
 			}
 		}
 	}
@@ -243,7 +243,7 @@ Down-convert the input signal with a given RF signal \n\
 		for (int n=0; n < npts; n++, f+=df)
 		{
 			if ((f > f_upper)&&(f<f_lower))
-				fft(n) = Complex(0.0,0.0);
+				fft.xelem(n) = Complex(0.0,0.0);
 		}
 	}
 
