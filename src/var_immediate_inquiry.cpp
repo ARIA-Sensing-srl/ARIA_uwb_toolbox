@@ -65,7 +65,7 @@ Send a message to stdout so that the @var{var_name} is updated immediately from 
     if (var_name_string.empty()) return octave_value(out);
 
     // Create a file and write the variable name
-	std::string path = std::filesystem::current_path();
+	std::string path = std::filesystem::current_path().generic_string();
 	/*
     char temp [ 4096 ];
     if ( getcwd(temp, 4096) != 0)
