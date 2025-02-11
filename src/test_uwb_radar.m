@@ -364,6 +364,7 @@ rx_pos_array = [ antenna_array_rx(1).position;...
 
 [delay_map,phase_fact] = build_delay_map(x,y,z,fc, tx_pos_array,rx_pos_array);
 % Build 2D LPF
+pkg load image
 filtimg = fspecial("gaussian",15,10);
 
 % Build DAS map
