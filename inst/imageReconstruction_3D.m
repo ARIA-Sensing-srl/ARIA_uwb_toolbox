@@ -164,7 +164,7 @@ function outputImage = imageReconstruction_3D (hradar,inputData, thetaBase, phyB
   endfor
 
   if (DASSelected == 0)
-    #peform DAS
+    #peform DMAS
     for a = 1 : (numCycles-1)
       curA = squeeze(remapStorage(a,:,:,:));
       for k = (a+1):numCycles
@@ -172,7 +172,6 @@ function outputImage = imageReconstruction_3D (hradar,inputData, thetaBase, phyB
         outputImage = outputImage + curA.*curB;
       endfor
     endfor
-    outputImage = outputImage ./ sqrt(abs(outputImage));
   else
     outputImage = (outputImage / (numCycles)); #normalization
   endif

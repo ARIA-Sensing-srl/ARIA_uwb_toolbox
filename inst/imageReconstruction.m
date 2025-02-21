@@ -160,7 +160,7 @@ function outputImage = imageReconstruction (hradar,inputData, phyBase, rhoBase ,
 
 
   if (DASSelected == 0)
-    #peform DAS
+    #peform DMAS
     for a = 1 : (numCycles-1)
       curA = squeeze(remapStorage(a,:,:));
       for k = (a+1):numCycles
@@ -168,8 +168,6 @@ function outputImage = imageReconstruction (hradar,inputData, phyBase, rhoBase ,
         outputImage = outputImage + curA.*curB;
       endfor
     endfor
-    #module normalization
-    outputImage = outputImage ./ sqrt(abs(outputImage));
   else
     outputImage = outputImage / (numCycles); #normalization
   endif
