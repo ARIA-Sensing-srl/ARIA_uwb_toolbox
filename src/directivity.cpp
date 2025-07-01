@@ -77,6 +77,7 @@ octave_value directivity(const octave_value_list& args)
 			{
 				pwr += da*dz*fabs(sin(zen.xelem(z)+dz/2))*(std::norm(ep.xelem(a,z,f)) + std::norm(et.xelem(a,z,f)))*ONE_OVER_ETA0;
 			}
+		// Let's get averaged power over solid angle
 		pwr = pwr / (4.0*M_PI);
 		double one_over_pwr = 1.0/pwr;
 		double actual_f = freq(f);
@@ -88,10 +89,10 @@ octave_value directivity(const octave_value_list& args)
 			{
 				std::complex<double> ep_azf = ep.xelem(a,z,f);
 				std::complex<double> et_azf = et.xelem(a,z,f);
-				//double area = da*dz*fabs(sin(zen(z)+dz/2));
-				//double area_sq = sqrt(area);
-				dp.xelem(a,z,f) = ep_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
-				dt.xelem(a,z,f) = et_azf * sqrt(ONE_OVER_ETA0 * one_over_pwr);
+				double area = da*dz*fabs(sin(zen(z)+dz/2));
+				double area_sq = sqrt(ONE_OVER_ETA0 * one_over_pwr * area);
+				dp.xelem(a,z,f) = ep_azf * area_sq;
+				dt.xelem(a,z,f) = et_azf * area_sq;
 				aeff_p.xelem(a,z,f) = dp.xelem(a,z,f) * d_to_ae;
 				aeff_t.xelem(a,z,f) = dt.xelem(a,z,f) * d_to_ae;
 				dir_abs.xelem(a,z,f) = ( (std::norm(ep_azf) + std::norm(et_azf))*one_over_pwr*ONE_OVER_ETA0);
