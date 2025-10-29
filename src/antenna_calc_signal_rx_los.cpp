@@ -1,0 +1,305 @@
+/* Copyright (C) 2024 Alessio Cacciatori
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+## -*- texinfo -*-
+##@deftypefn {} {@var{aout} =} antenna_calc_signal_rx (@var{ant},@var{pos_ant}, @var{pos}, @var{signal}, @var{ts})\n\
+## Calculate the signal received from a receiving antenna in Tx->Rx LOS configuration\n\
+## @var{ant}		is the antenna, \n\
+## @var{pos}		is the position of the Tx antenna \n\
+## @var{ts}			is the sampling interval for the input signal \n\
+## @var{do_noise}   is 1 to add thermal noise \n\
+## @seealso{antenna_calc_signal_rx}
+## @end deftypefn
+
+## Author: Alessio Cacciatori <alessioc@alessio-laptop>
+## Created: 2024-11-15
+*/
+
+#include <octave/oct.h>
+#include <octave/ov-struct.h>
+#include <octave/parse.h>
+#include "aria_uwb_toolbox.h"
+
+enum RCS_TYPE
+{
+    RCS_UNDEF,RCS_NUMBER, RCS_MATRIX, RCS_NUMBER_FREQ, RCS_MATRIX_FREQ
+};
+
+DEFUN_DLD(antenna_calc_signal_rx_los, args, , "-*- texinfo -*-\n\
+@deftypefn {} {@var{aout} =} antenna_calc_signal_rx_los (@var{ant}, @var{pos}, \
+@var {donoise},@var{ts} ,@var{rcs}, @var{rcs_freq})\n\
+Calculate the signal received from a receiving antenna in Tx->Rx LOS configuration\n\
+@var{ant}			is the antenna, \n\
+@var{pos}			is the position of the Tx antenna \n\
+@var{ts}			is the sampling interval for the input signal \n\
+@var{do_noise}		is 1 to add thermal noise \n\
+@end deftypefn")
+{
+	if (args.length() != 4)
+    {
+        print_usage();
+        return octave_value_list();
+    }
+    octave_value ant_dut = args(0);
+
+    octave_value check = octave::feval("antenna_is_valid",ant_dut)(0);
+    if (!check.isempty())
+    {
+        octave_stdout << check.char_array_value();
+        return octave_value();
+    }
+    octave_map ant = ant_dut.map_value();
+
+    if ((!ant.contains("td_tx_ep"))||(!ant.contains("td_tx_et")))
+    {
+        error("tx signal is missing");
+        return octave_value();
+    }
+
+	if (!(args(1).isreal())||((args(1).numel()!=3)&&(args(1).numel()!=0)))
+    {
+		error("pos must be a 3-values or empty real vector");
+        return octave_value();
+    }
+
+	if (!(args(2).isreal())||(args(2).numel()!=1)||(args(2).array_value()(0)<=0))
+    {
+        error("ts must be a single positive real value");
+    }
+
+    int do_noise = 0;
+	if (!(args(3).isreal())||(args(3).numel()!=1))
+    {
+        error("do noise must be 1 or 0");
+        return octave_value();
+    }
+
+	do_noise = int(args(3).array_value()(0));
+    if ((do_noise != 0)&&(do_noise != 1))
+    {
+        error("do noise must be 1 or 0");
+        return octave_value();
+    }
+
+	NDArray pos_ant = ant.getfield("position")(0).array_value();
+	NDArray pos     = args(1).array_value();
+	// Make same dims
+    if (pos.dim1()!=pos_ant.dim1())
+	{ pos.reshape(pos_ant.dims()); }
+
+	double  ts      = args(2).array_value()(0);
+	double  delay   = ant.getfield("fixed_delay")(0).array_value()(0);
+	double  loss    = ant.getfield("loss")(0).array_value()(0);
+
+
+    // Delay
+    NDArray delta   = (pos - pos_ant);
+    double  az, zen, r;
+
+    rect_to_polar(delta(0),delta(1),delta(2), az, zen, r);
+
+    // Check if we need to update
+    bool recalc =
+	   ((!ant.contains("td_aeff_t"))||
+		(!ant.contains("td_aeff_p"))||
+		(!ant.contains("n_ffts"))	||
+		(!ant.contains("td_az"))	||
+		(!ant.contains("td_zen"))	||
+		(!ant.contains("td_ts"))	||
+		(!ant.contains("td_delay"))	||
+		(!ant.contains("td_loss")));
+
+	ComplexNDArray td_ep;
+	ComplexNDArray td_et;
+	int n_samples = 0;
+	if (ant.contains("td_tx_ep"))
+		td_ep = ant.getfield("td_tx_ep")(0).complex_array_value();
+
+	if (ant.contains("td_tx_ep"))
+		td_et = ant.getfield("td_tx_et")(0).complex_array_value();
+
+	n_samples = td_et.numel() > td_ep.numel() ? td_et.numel() : td_ep.numel();
+
+	if (!recalc)
+    {
+        octave_value nfft = ant.getfield("n_ffts")(0);
+        if (nfft.numel()!=1)
+		{ recalc = true; n_samples = nfft.array_value()(0);}
+        else
+        {
+			if ((td_ep.numel()==td_et.numel())||(nfft.array_value()(0)!=td_et.numel()))
+                recalc = true;
+			else
+				n_samples = td_ep.numel();
+        }
+    }
+
+    if (!recalc)
+    {
+
+        octave_value azfield = ant.getfield("td_az")(0);
+        if (azfield.numel()!=1)
+            recalc = true;
+        else
+        {
+            if (fabs((azfield.array_value()(0)-az))>1e-3)
+                recalc = true;
+        }
+    }
+
+    if (!recalc)
+    {
+
+        octave_value zenfield = ant.getfield("td_zen")(0);
+        if (zenfield.numel()!=1)
+            recalc = true;
+        else
+        {
+            if (fabs((zenfield.array_value()(0)-zen))>1e-3)
+                recalc = true;
+        }
+    }
+
+    if (!recalc)
+    {
+        octave_value tsfield = ant.getfield("td_ts")(0);
+        if (tsfield.numel()!=1)
+            recalc = true;
+        else
+        {
+            if (fabs((tsfield.array_value()(0)-ts))>1e-15)
+                recalc = true;
+        }
+    }
+
+	if (!recalc)
+	{
+		octave_value tsdelay = ant.getfield("td_delay")(0);
+		if (tsdelay.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsdelay.array_value()(0)-delay))>1e-15)
+				recalc = true;
+		}
+	}
+
+	if (!recalc)
+	{
+		octave_value tsloss = ant.getfield("td_loss")(0);
+		if (tsloss.numel()!=1)
+			recalc = true;
+		else
+		{
+			if (fabs((tsloss.array_value()(0)-loss))>1e-15)
+				recalc = true;
+		}
+	}
+
+    double az_min = ant.getfield("azimuth")(0).array_value().min()(0);
+    double az_max = ant.getfield("azimuth")(0).array_value().max()(0);
+
+    double zen_min = ant.getfield("zenith")(0).array_value().min()(0);
+    double zen_max = ant.getfield("zenith")(0).array_value().max()(0);
+
+    if (az < az_min)
+        az+=M_2PI;
+
+    if (az > az_max)
+        az-=M_2PI;
+
+    if (zen < zen_min)
+        zen+=M_2PI;
+
+    if (zen > zen_max)
+        zen-=M_2PI;
+
+    if (recalc)
+	{
+		ant = ant_build_time_domain_angle(ant_dut, ts*double(n_samples), ts, az, zen, delay, loss).map_value();
+    }
+
+    //-----------------------------------------------------------------------------------------
+    // We start from the electric field radiated from the position, and we calculate power
+    // flow at receiving antenna.
+    // IMPORTANT NOTE: For simplicity, we assume Phi|Theta component of the electric field
+    // at the target are the Phi|Theta component at Rx antenna as well.
+    // Actual components mapping should be added (especially if Tx and Rx antennas are spaced
+    // apart)
+    //-----------------------------------------------------------------------------------------
+    // When we calculate the output voltage, we move from the power domain, to the voltage domain
+    // so P = V^2/(2*Z0) => V = sqrt(P * 2 * Z0)
+	ComplexNDArray in_fft_ep = td_ep.fourier()*sqrt(100*ONE_OVER_ETA0);
+	ComplexNDArray in_fft_et = td_et.fourier()*sqrt(100*ONE_OVER_ETA0);
+
+    ComplexNDArray out_fft;
+
+    ComplexNDArray aeffp_i = ant.getfield("td_aeffp")(0).complex_array_value();
+    ComplexNDArray aefft_i = ant.getfield("td_aefft")(0).complex_array_value();
+
+    out_fft.resize(in_fft_ep.dims());
+
+    NDArray freqs_fft = ant.getfield("td_freqs")(0).array_value();
+    double df = freqs_fft(1)-freqs_fft(0);
+
+    int n_freq_of_interest = freqs_fft.numel();
+
+
+    if (freqs_fft.numel() < 2)
+    {
+        error("Error: only one frequency available");
+		return octave_value_list();
+    }
+
+
+    std::complex<double> comp_delay = std::complex<double>(1.0,0.0);
+	std::complex<double> dexp       = std::exp(std::complex(0.0, -M_2PI * df * (-REF_DISTANCE)/C0));
+
+    // Let's add Thermal noise as well: AvPwr = kTBR
+    double fs = 1.0/ts;
+    double noise_pwr = Kb*300.15*fs*50;
+    NDArray dim_t(dim_vector({1,2}));
+    dim_t(0)=1;
+    dim_t(1)=n_samples;
+
+    NDArray noise;
+    ComplexNDArray noise_f;
+    NDArray dir = ant.getfield("td_dir_abs")(0).array_value();
+
+    if (do_noise == 1)
+    {
+        noise = octave::feval("randn", octave_value_list(octave_value(dim_t)))(0).array_value()*sqrt(noise_pwr);
+        noise_f = noise.fourier();
+        dir /= dir.max()(0);
+    }
+
+    for (int f =0 ; f < n_freq_of_interest; f++)
+    {
+		out_fft(f) = (in_fft_ep(f) * aeffp_i(f) + in_fft_et(f) * aefft_i(f)) * comp_delay;
+        comp_delay *= dexp;
+    }
+
+    // Build remaining part of the signal
+    int nstart = (n_samples % 2)==0 ? n_samples/2 -1 : (n_samples-1)/2;
+
+    for (int f=n_freq_of_interest; f < n_samples; f++, nstart--)
+    {
+        out_fft(f) = std::conj(out_fft(nstart));
+    }
+
+    ant.assign("td_rx",octave_value(out_fft.ifourier()));
+
+    return octave_value_list(ant);
+}
