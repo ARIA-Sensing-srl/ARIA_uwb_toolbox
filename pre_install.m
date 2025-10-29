@@ -209,6 +209,7 @@ if exclude_build==0
   mkoctfile var_immediate_inquiry.cpp aria_rdk_interface_message.cpp
   mkoctfile var_immediate_command.cpp aria_rdk_interface_message.cpp
   mkoctfile var_immediate_update.cpp aria_rdk_interface_message.cpp
+  mkoctfile f16tosingle.cpp
 endif
 
   printf("-----------------------------------\n");

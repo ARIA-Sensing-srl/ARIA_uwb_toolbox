@@ -169,7 +169,7 @@ function outputImage = imageReconstruction_3D (hradar,inputData, thetaBase, phyB
       curA = squeeze(remapStorage(a,:,:,:));
       for k = (a+1):numCycles
         curB = squeeze(remapStorage(k,:,:,:));
-        outputImage = outputImage + curA.*curB;
+        outputImage = outputImage + curA.*conj(curB);
       endfor
     endfor
   else
