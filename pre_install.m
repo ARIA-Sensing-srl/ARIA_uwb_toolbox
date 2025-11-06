@@ -84,7 +84,7 @@ if exclude_build==0
   if rebuild_antenna_directivity == 1
       clear antenna_directivity
       printf("Making antenna_directivity...\n");
-      mkoctfile antenna_directivity.cpp uwb_toolbox_utils.cpp
+      mkoctfile antenna_directivity.cpp directivity.cpp uwb_toolbox_utils.cpp
       printf("Done \n");
   endif
 
@@ -119,7 +119,7 @@ if exclude_build==0
   if rebuild_antenna_rebuild_for_time_domain_single_angle == 1
       clear antenna_rebuild_for_time_domain_single_angle
       printf("Making antenna_rebuild_for_time_domain_single_angle...\n");
-      mkoctfile antenna_rebuild_for_time_domain_single_angle.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
+      mkoctfile antenna_rebuild_for_time_domain_single_angle.cpp directivity.cpp ant_build_time_domain_angle.cpp uwb_toolbox_utils.cpp util_interp_fields.cpp
       printf("Done \n");
   endif
 
