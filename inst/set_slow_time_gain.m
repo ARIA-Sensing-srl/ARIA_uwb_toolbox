@@ -2,7 +2,7 @@
 % Cover Sistemi srl 2018
 % Confidential-reserved
 % *************************************************
-function [ ret_code ] = set_slow_time_gain(board, gain)
+function [ ret_code, v ] = set_slow_time_gain(board, gain)
 %------------------------------------------------
 %------------------------------------------------
 % Set the gain across slow-time axis
@@ -12,11 +12,16 @@ global CRC_ENGINE;
 COMMAND    = uint8('i');
 % END_CHAR   = uint8(hex2dec('00'));
 
-
+ret_code = 0;
+v = [];
 command_string = [  COMMAND zeros(1,16)];
 
 index=2;
-ui16fps = uint16(gain);
+if (isempty(gain))
+  ui16fps = uint16(0xFFFF);
+else
+  ui16fps = uint16(gain);
+end
 [command_string, index] = code_int16(command_string, index, ui16fps);
 % command_string(index) = END_CHAR;
 command_string = command_string(1:index-1);
@@ -38,12 +43,7 @@ end
 
 if (stream_in(1)=='i')
     [~,v] = get_uint16(stream_in,2);
-    if (v~=ui16fps)
-        ret_code = 1;
-        return;
-    else
-        ret_code = 0;
-    end;
+
 else
     ret_code = 1;
     return;

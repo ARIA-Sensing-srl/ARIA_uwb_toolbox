@@ -1,4 +1,7 @@
-function [ ret_code ] = set_elab(board, elaboration_type)
+function [ ret_code, v ] = set_elab(board, elaboration_type)
+
+ret_code = 0;
+v = [];
 %-------------------------------------------------
 % Elaboration type
 %-------------------------------------------------
@@ -15,7 +18,12 @@ function [ ret_code ] = set_elab(board, elaboration_type)
 % START_CHAR = uint8(hex2dec('FF'));
 COMMAND    = uint8('e');
 % END_CHAR   = uint8(hex2dec('00'));
-ui8elab = uint8(elaboration_type);
+
+if (isempty(elaboration_type))
+  ui8elab = uint8(0xFF);
+else
+  ui8elab = uint8(elaboration_type);
+end
 
 command_string = [  COMMAND zeros(1,16)];
 
@@ -30,7 +38,7 @@ encoding_and_send(board, CRC_ENGINE, command_string);
 % 	fwrite(board,command_string);
 % else
 % 	srl_flush(board);
-% 	srl_write(board,command_string);	
+% 	srl_write(board,command_string);
 % end;
 % Read answer
 pause(.01);
@@ -42,12 +50,8 @@ end
 
 if (stream_in(1)=='e')
     [~,v] = get_int8(stream_in,2);
-    if (v~=ui8elab)
-        ret_code = 1;
-    else
-        ret_code = 0;
-    end;
-else    
+
+else
     ret_code = 1;
 end;
 

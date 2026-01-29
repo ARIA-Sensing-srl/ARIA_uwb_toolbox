@@ -2,13 +2,21 @@
 % Cover Sistemi srl 2018
 % Confidential-reserved
 % *************************************************
-function [ ret_code ] = set_fps(board, fps)
+function [ ret_code, v ] = set_fps(board, fps)
+
+ret_code = 0;
+v=[];
 % Start the radar acquisition
 % global DEFINE_OCTAVE;
 % START_CHAR = uint8(hex2dec('FF'));
 COMMAND    = uint8('f');
 % END_CHAR   = uint8(hex2dec('00'));
-ui16fps = uint16(fps);
+
+if (isempty(fps))
+	ui16fps = uint16(0xFFFF);
+else
+	ui16fps = uint16(fps);
+end
 
 command_string = [  COMMAND zeros(1,16)];
 
@@ -35,11 +43,7 @@ end
 
 if (stream_in(1)=='f')
     [~,v] = get_int16(stream_in,2);
-    if (v~=fps)
-        ret_code = 1;
-    else
-        ret_code = 0;
-    end;
+   
 else    
     ret_code = 1;
 end;

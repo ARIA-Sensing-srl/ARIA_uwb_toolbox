@@ -10,16 +10,22 @@
 %3: F32
 %4: F16
 
-function [ ret_code ] = set_data_fmt(board, fmt)
+function [ ret_code, v] = set_data_fmt(board, fmt)
 %-------------------------------------------------
 % Tx Power
 %-------------------------------------------------
 % 0-7
 % 0xFF query
-
+v = [];
+ret_code = 0;
 global CRC_ENGINE;
 COMMAND    = uint8(10);
-fmt = uint8(fmt);
+
+if (isempty(fmt))
+	fmt = uint8(0xFF);
+else
+	fmt = uint8(fmt);
+end
 
 command_string = [COMMAND zeros(1,1)];
 index=2;
@@ -36,11 +42,6 @@ end
 
 if (stream_in(1)==COMMAND)
     [~,v] = get_int8(stream_in,2);
-    if (v~=fmt)
-        ret_code = 1;
-    else
-        ret_code = 0;
-    end;
 else
     ret_code = 1;
 end;

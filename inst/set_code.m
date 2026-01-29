@@ -24,7 +24,6 @@ COMMAND    = uint8(13);
 command_string = [COMMAND zeros(1,numSeq)];
 index=2;
 
-#[command_string, index] = code_int8(command_string, index, numSeq);
 [command_string, index] = code_int8(command_string, index, oarray);
 
 encoding_and_send(board, CRC_ENGINE, command_string);

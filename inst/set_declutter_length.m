@@ -2,13 +2,21 @@
 % Cover Sistemi srl 2018
 % Confidential-reserved
 % *************************************************
-function [ ret_code ] = set_declutter_length(board, declLength)
+function [ ret_code , v] = set_declutter_length(board, declLength)
 % Start the radar acquisition
 % global DEFINE_OCTAVE;
 % START_CHAR = uint8(hex2dec('FF'));
 COMMAND    = uint8('l');
 % END_CHAR   = uint8(hex2dec('00'));
-ui16declLgth = uint16(declLength);
+
+ret_code = 0;
+v =[];
+
+if (isempty(declLength))
+	ui16declLgth = uint16(0xFFFF);
+else
+	ui16declLgth = uint16(declLength);
+end
 
 command_string = [  COMMAND zeros(1,16)];
 
@@ -36,11 +44,7 @@ end
 
 if (stream_in(1)=='l')
     [~,v] = get_int16(stream_in,2);
-    if (v~=declLength)
-        ret_code = 1;
-    else
-        ret_code = 0;
-    end;
+   
 else    
     ret_code = 1;
 end;

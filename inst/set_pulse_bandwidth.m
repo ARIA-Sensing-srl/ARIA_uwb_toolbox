@@ -8,8 +8,17 @@
 function [ ret_code, actual_freq ] = set_pulse_bandwidth(board, freq)
 
 global CRC_ENGINE;
+
+ret_code = 0;
+actual_freq = [];
+
 COMMAND    = uint8(12);
-freq = uint16(freq);
+if (isempty(freq))
+	freq = uint16(0xFFFF);
+else
+	freq = uint16(freq);
+end
+
 
 command_string = [COMMAND zeros(1,2)];
 index=2;

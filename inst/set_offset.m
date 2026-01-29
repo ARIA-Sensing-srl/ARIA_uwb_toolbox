@@ -17,7 +17,11 @@ COMMAND    = uint8('0');
 command_string = [  COMMAND zeros(1,16)];
 
 index=2;
-[command_string, index] = code_float(command_string, index, offset_in);
+if (isempty(offset_in))
+	[command_string, index] = code_int32(command_string, index, int32(-1));
+else
+	[command_string, index] = code_float(command_string, index, offset_in);
+end
 % command_string(index) = END_CHAR;
 
 global CRC_ENGINE;

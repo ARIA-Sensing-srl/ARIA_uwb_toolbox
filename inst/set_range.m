@@ -6,8 +6,15 @@ function [ ret_code,rMin,rMax ] = set_range(board, range_min, range_max)
 % Start the acquisition range (in m)
 % global DEFINE_OCTAVE;
 global CRC_ENGINE;
-min_x = min(range_min,range_max);
-max_x = max(range_min,range_max);
+
+
+if (isempty(range_min)==0 && isempty(range_max)==0)
+	min_x = min(range_min,range_max);
+	max_x = max(range_min,range_max);
+else
+	min_x = range_min;
+	max_x = range_max;
+end
 
 rMin = -1;
 rMax = -1;
@@ -18,7 +25,11 @@ COMMAND    = uint8('x');
 command_string = [  COMMAND zeros(1,16)];
 
 index=2;
-[command_string, index] = code_float(command_string, index, min_x);
+if (isempty(min_x))
+	[command_string, index] = code_int32(command_string, index, int32(-1));
+else
+	[command_string, index] = code_float(command_string, index, min_x);
+end
 % command_string(index) = END_CHAR;
 
 command_string = command_string(1:index-1);
@@ -45,7 +56,11 @@ COMMAND    = uint8('X');
 command_string = [  COMMAND zeros(1,16)];
 
 index=2;
-[command_string, index] = code_float(command_string, index, max_x);
+if (isempty(max_x))
+	[command_string, index] = code_int32(command_string, index, int32(-1));
+else
+	[command_string, index] = code_float(command_string, index, max_x);
+end
 command_string = command_string(1:index-1);
 encoding_and_send(board, CRC_ENGINE, command_string);
 

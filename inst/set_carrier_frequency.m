@@ -9,7 +9,12 @@ function [ ret_code, actual_freq ] = set_carrier_frequency(board, freq)
 
 global CRC_ENGINE;
 COMMAND    = uint8(11);
-freq = uint16(freq);
+
+if (isempty(freq))
+	freq = uint16(0xFFFF);
+else
+	freq = uint16(freq);
+end
 
 actual_freq=[];
 

@@ -2,17 +2,23 @@
 % Cover Sistemi srl 2018
 % Confidential-reserved
 % *************************************************
-function [ ret_code ] = set_tx_power(board, tx_power)
+function [ ret_code, v ] = set_tx_power(board, tx_power)
 %-------------------------------------------------
 % Tx Power
 %-------------------------------------------------
 % 0-7
 % 0xFF query
+ret_code = 0 ;
+v = [];
 
 global CRC_ENGINE;
 COMMAND    = uint8('p');
 
-ui8tx_power = uint8(tx_power);
+if (isempty(tx_power))
+	ui8tx_power = uint8(0xFF);
+else
+	ui8tx_power = uint8(tx_power);
+end
 
 command_string = [COMMAND zeros(1,1)];
 index=2;
@@ -29,11 +35,6 @@ end
 
 if (stream_in(1)=='p')
     [~,v] = get_int8(stream_in,2);
-    if (v~=ui8tx_power)
-        ret_code = 1;
-    else
-        ret_code = 0;
-    end;
 else
     ret_code = 1;
 end;
