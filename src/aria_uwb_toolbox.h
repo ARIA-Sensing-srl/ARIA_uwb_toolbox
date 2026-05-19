@@ -14,6 +14,8 @@
 #endif
 #define C0 299792458
 #define REF_DISTANCE 1.0
+
+#define SQR(x) ((x)*(x))
 // List of accessory functions
 // General
 enum dt_size{UNDEFINED, EMPTY, NUMBER, VECTOR, MATRIX_2D, MATRIX_3D, MATRIX_ND};
@@ -48,7 +50,9 @@ octave_value interp_field(const octave_value& field_in,
                           const octave_value& fend,
                           bool spline=false);
 
+octave_value realized_gain(const octave_value_list& args);
 octave_value directivity(const octave_value_list& args);
+octave_value rescale_ep_et_from_input_impedance(const octave_value_list& args);
 
 //octave_value ant_build_time_domain_angle(const octave_value_list& args);
 octave_value ant_build_time_domain_angle(const octave_value& antenna, double tmax, double ts, double az_angle, double zen_angle, double fixed_delay, double loss);
@@ -57,5 +61,11 @@ dt_type_size check_data_size(const octave_value& data);
 
 // S-Params conversions
 octave_value stoz_inner(const octave_value& smat, const octave_value& zports);
+
+octave_value pt_to_xyz(const octave_value& ep, const octave_value& et, double azimuth, double zenith);
+octave_value xyz_tp_pt(const octave_value& ep, const octave_value& et, double azimuth, double zenith);
+
+octave_value get_rotated_angles(const octave_value& antenna_azimuth, const octave_value& antenna_zenith, double azimuth_rotate, double zenith_rotate, double azimuth, double zenith);
+
 
 #endif // ARIA_UWB_TOOLBOX_H

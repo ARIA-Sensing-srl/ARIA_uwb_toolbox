@@ -2,6 +2,7 @@
 aria_uwb_toolbox >> ARIA UWB Toolbox
 Category DataAccess 1
  var_immediate_inquiry var_immediate_command var_immediate_update
+ var_immediate_inquiry_pipe var_immediate_command_pipe var_immediate_update_pipe
 Category Antenna 2
  antenna_create antenna_is_valid antenna_radiated_power antenna_directivity
  antenna_group_delay antenna_rebuild_for_time_domain antenna_rebuild_for_time_domain_single_angle
@@ -13,6 +14,8 @@ Category data_converter 4
 Category image reconstruction
  imageReconstruction
  imageReconstruction_3D
+ beamforming2d
+ beamforming3d
 Category message decoder
  msgdec_ant_config.m
  msgdec_image.m
