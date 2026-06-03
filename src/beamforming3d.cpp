@@ -121,8 +121,11 @@ DEFUN_DLD(beamforming3d, args, , "-*- texinfo -*-\n\
     NDArray  elevation_base  = args(3).array_value();  // Cross range
     NDArray  rho_base  = args(4).array_value();  // Cross range
 
-    int nxx = azimuth_base.numel();
-    int nyy = elevation_base.numel();
+    //int nxx = azimuth_base.numel();
+    //int nyy = elevation_base.numel();
+
+    int nyy = azimuth_base.numel();
+    int nxx = elevation_base.numel();
     int nzz = rho_base.numel();
 
     octave_idx_type numel_xyz = nxx * nyy * nzz;
@@ -248,8 +251,8 @@ DEFUN_DLD(beamforming3d, args, , "-*- texinfo -*-\n\
                 for (int iz = 0; iz < nzz; iz++)
                 {
                     double r = rho_base(iz);
-                    double a = azimuth_base(ix);
-                    double e = elevation_base(iy);
+                    double a = azimuth_base(iy);
+                    double e = elevation_base(ix);
                     double xx = r * sin(e) * cos(a);
                     double yy = r * sin(e) * sin(a);
                     double zz = r * cos(e);
@@ -317,7 +320,7 @@ DEFUN_DLD(beamforming3d, args, , "-*- texinfo -*-\n\
         indexes_1 = radar_struct.getfield("indexes_1")(0).array_value();
         sin_cos_wp= radar_struct.getfield("sin_cos_wp")(0).complex_array_value();
     }
-	
+
     //------------------------------------------------------------------
     // Build interpolated data according to RTTs. In every point (x,y,s), the interpolated value is
     // stored
@@ -340,7 +343,7 @@ DEFUN_DLD(beamforming3d, args, , "-*- texinfo -*-\n\
                 }
             }
     radar_struct.assign("interp_streams", octave_value(interp_streams));
-	
+
     //------------------------------------------------------------------
     // Proceed with actual calculation
     octave_idx_type bf_index = 0;
